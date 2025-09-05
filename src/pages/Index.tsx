@@ -8,7 +8,6 @@ import { Button } from '@/components/ui/button';
 import { deliverables as initialDeliverables } from '@/data/deliverables';
 import { Deliverable, PriorityType } from '@/types/deliverable';
 import { FileSpreadsheet, Settings, Download } from 'lucide-react';
-
 const Index = () => {
   const [deliverables, setDeliverables] = useState(initialDeliverables);
   const [searchTerm, setSearchTerm] = useState('');
@@ -16,31 +15,25 @@ const Index = () => {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [showOptedInOnly, setShowOptedInOnly] = useState(false);
   const [selectedDeliverable, setSelectedDeliverable] = useState<Deliverable | null>(null);
-
   const filteredDeliverables = useMemo(() => {
     return deliverables.filter(deliverable => {
-      const matchesSearch = deliverable.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           deliverable.description.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesSearch = deliverable.title.toLowerCase().includes(searchTerm.toLowerCase()) || deliverable.description.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesPriority = selectedPriority === 'all' || deliverable.priority === selectedPriority;
       const matchesCategory = selectedCategory === 'all' || deliverable.category === selectedCategory;
       const matchesOptIn = !showOptedInOnly || deliverable.isOptedIn;
-      
       return matchesSearch && matchesPriority && matchesCategory && matchesOptIn;
     });
   }, [deliverables, searchTerm, selectedPriority, selectedCategory, showOptedInOnly]);
-
   const handleToggleOptIn = (id: string, isOptedIn: boolean) => {
-    setDeliverables(prev => 
-      prev.map(d => d.id === id ? { ...d, isOptedIn } : d)
-    );
+    setDeliverables(prev => prev.map(d => d.id === id ? {
+      ...d,
+      isOptedIn
+    } : d));
   };
-
   const handleViewDetails = (deliverable: Deliverable) => {
     setSelectedDeliverable(deliverable);
   };
-
-  return (
-    <div className="min-h-screen bg-background">
+  return <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4">
@@ -48,8 +41,9 @@ const Index = () => {
             <div className="flex items-center gap-3">
               <FileSpreadsheet className="h-8 w-8 text-primary" />
               <div>
-                <h1 className="text-xl font-bold text-card-foreground">SI業務 成果物管理システム</h1>
-                <p className="text-sm text-muted-foreground">上流工程の成果物一覧と管理</p>
+                <h1 className="text-xl font-bold text-card-foreground">成果物一覧</h1>
+                <p className="text-sm text-muted-foreground">
+              </p>
               </div>
             </div>
             <div className="flex gap-2">
@@ -68,59 +62,31 @@ const Index = () => {
 
       {/* Main Content */}
       <main className="container mx-auto px-4 py-6">
-        <StatsCard 
-          deliverables={deliverables} 
-          filteredDeliverables={filteredDeliverables}
-        />
+        <StatsCard deliverables={deliverables} filteredDeliverables={filteredDeliverables} />
 
-        <FilterBar
-          searchTerm={searchTerm}
-          onSearchChange={setSearchTerm}
-          selectedPriority={selectedPriority}
-          onPriorityChange={setSelectedPriority}
-          selectedCategory={selectedCategory}
-          onCategoryChange={setSelectedCategory}
-          showOptedInOnly={showOptedInOnly}
-          onOptedInToggle={() => setShowOptedInOnly(!showOptedInOnly)}
-        />
+        <FilterBar searchTerm={searchTerm} onSearchChange={setSearchTerm} selectedPriority={selectedPriority} onPriorityChange={setSelectedPriority} selectedCategory={selectedCategory} onCategoryChange={setSelectedCategory} showOptedInOnly={showOptedInOnly} onOptedInToggle={() => setShowOptedInOnly(!showOptedInOnly)} />
 
         <div className="mt-6">
-          {filteredDeliverables.length === 0 ? (
-            <div className="text-center py-12">
+          {filteredDeliverables.length === 0 ? <div className="text-center py-12">
               <p className="text-muted-foreground">条件に一致する成果物が見つかりません</p>
-              <Button
-                variant="ghost"
-                className="mt-2"
-                onClick={() => {
-                  setSearchTerm('');
-                  setSelectedPriority('all');
-                  setSelectedCategory('all');
-                  setShowOptedInOnly(false);
-                }}
-              >
+              <Button variant="ghost" className="mt-2" onClick={() => {
+            setSearchTerm('');
+            setSelectedPriority('all');
+            setSelectedCategory('all');
+            setShowOptedInOnly(false);
+          }}>
                 フィルターをリセット
               </Button>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filteredDeliverables.map((deliverable) => (
-                <DeliverableCard
-                  key={deliverable.id}
-                  deliverable={deliverable}
-                  onToggleOptIn={handleToggleOptIn}
-                  onViewDetails={handleViewDetails}
-                />
-              ))}
-            </div>
-          )}
+            </div> : <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filteredDeliverables.map(deliverable => <DeliverableCard key={deliverable.id} deliverable={deliverable} onToggleOptIn={handleToggleOptIn} onViewDetails={handleViewDetails} />)}
+            </div>}
         </div>
       </main>
 
       {/* Detail Dialog */}
       <Dialog open={!!selectedDeliverable} onOpenChange={() => setSelectedDeliverable(null)}>
         <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-          {selectedDeliverable && (
-            <>
+          {selectedDeliverable && <>
               <DialogHeader>
                 <DialogTitle className="flex items-center gap-2">
                   {selectedDeliverable.title}
@@ -138,30 +104,24 @@ const Index = () => {
                   </p>
                 </div>
                 
-                {selectedDeliverable.purpose && (
-                  <div>
+                {selectedDeliverable.purpose && <div>
                     <h4 className="font-medium mb-2">目的・意義</h4>
                     <p className="text-sm text-muted-foreground">
                       {selectedDeliverable.purpose}
                     </p>
-                  </div>
-                )}
+                  </div>}
                 
-                {selectedDeliverable.requirements && (
-                  <div>
+                {selectedDeliverable.requirements && <div>
                     <h4 className="font-medium mb-2">存在意義</h4>
                     <p className="text-sm text-muted-foreground">
                       {selectedDeliverable.requirements}
                     </p>
-                  </div>
-                )}
+                  </div>}
                 
-                {selectedDeliverable.templates.length > 0 && (
-                  <div>
+                {selectedDeliverable.templates.length > 0 && <div>
                     <h4 className="font-medium mb-2">利用可能なテンプレート</h4>
                     <div className="space-y-2">
-                      {selectedDeliverable.templates.map((template) => (
-                        <div key={template.id} className="flex items-center justify-between p-3 border rounded-lg">
+                      {selectedDeliverable.templates.map(template => <div key={template.id} className="flex items-center justify-between p-3 border rounded-lg">
                           <div>
                             <p className="font-medium text-sm">{template.name}</p>
                             <p className="text-xs text-muted-foreground">
@@ -173,34 +133,26 @@ const Index = () => {
                             <Download className="h-4 w-4 mr-1" />
                             ダウンロード
                           </Button>
-                        </div>
-                      ))}
+                        </div>)}
                     </div>
-                  </div>
-                )}
+                  </div>}
                 
                 <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
                   <span className="text-sm font-medium">この成果物を選択</span>
-                  <Button
-                    variant={selectedDeliverable.isOptedIn ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => {
-                      handleToggleOptIn(selectedDeliverable.id, !selectedDeliverable.isOptedIn);
-                      setSelectedDeliverable(prev => 
-                        prev ? { ...prev, isOptedIn: !prev.isOptedIn } : null
-                      );
-                    }}
-                  >
+                  <Button variant={selectedDeliverable.isOptedIn ? "default" : "outline"} size="sm" onClick={() => {
+                handleToggleOptIn(selectedDeliverable.id, !selectedDeliverable.isOptedIn);
+                setSelectedDeliverable(prev => prev ? {
+                  ...prev,
+                  isOptedIn: !prev.isOptedIn
+                } : null);
+              }}>
                     {selectedDeliverable.isOptedIn ? '選択中' : '選択する'}
                   </Button>
                 </div>
               </div>
-            </>
-          )}
+            </>}
         </DialogContent>
       </Dialog>
-    </div>
-  );
+    </div>;
 };
-
 export default Index;
