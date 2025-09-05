@@ -1,134 +1,195 @@
 import { Deliverable } from '@/types/deliverable';
 
 export const deliverables: Deliverable[] = [
+  // Must - 必須成果物
   {
     id: '1',
-    title: '上流工程の成果物一覧',
-    description: '上流工程の成果物の漏れを防ぐことの成果物が重要で、どれが重要でないかを理解させる',
-    purpose: '目的・役割・存在意義',
-    requirements: '上流工程の成果物を網羅している、重要度ランク、依存関係（図の方がいい？）',
+    title: '要件定義書',
+    description: '顧客の業務要件やシステム要件を明確に定義し、プロジェクトの目標と範囲を確定する',
+    purpose: 'ステークホルダー間での認識共有とプロジェクトスコープの明確化',
+    requirements: '業務要件、機能要件、非機能要件、制約条件を網羅的に記載',
     priority: 'Must',
-    category: '計画・管理',
+    category: '要件定義',
     templates: [
-      { id: 't1-1', name: '成果物一覧テンプレート', format: 'Excel', url: '#', hasSample: true },
-      { id: 't1-2', name: '成果物一覧（MD版）', format: 'MD', url: '#', hasSample: true }
+      { id: 't1-1', name: '要件定義書テンプレート', format: 'Excel', url: '#', hasSample: true },
+      { id: 't1-2', name: '要件定義書（Word版）', format: 'Word', url: '#', hasSample: true }
     ],
     isOptedIn: true
   },
   {
     id: '2',
-    title: '成果物のテンプレート提供',
-    description: '透明性と仕様の明確さと、作業効率の両立',
-    purpose: '前提資料からある程度のプリセットができる、複数形式（Excel, MDなど）で出力できる、複数形式のオプトイン・アウト、項目のオプトイン・アウト',
+    title: '基本設計書',
+    description: 'システムの全体構成と基本的な設計方針を定義する',
+    purpose: '開発チーム全体での設計方針統一と詳細設計の指針提供',
+    requirements: 'システム構成図、機能構成、インターフェース設計、データ設計の基本方針',
     priority: 'Must',
-    category: 'テンプレート',
+    category: '設計書',
     templates: [
-      { id: 't2-1', name: 'テンプレート標準形式', format: 'Excel', url: '#', hasSample: true },
-      { id: 't2-2', name: 'Markdown形式', format: 'MD', url: '#', hasSample: false }
+      { id: 't2-1', name: '基本設計書テンプレート', format: 'Excel', url: '#', hasSample: true },
+      { id: 't2-2', name: '基本設計書（Word版）', format: 'Word', url: '#', hasSample: false }
     ],
     isOptedIn: true
   },
   {
     id: '3',
-    title: '成果物とペアのチェックリスト',
-    description: 'チェーリングされた成果物の状態に関わらず、一律のチェックリストを提供する',
-    purpose: '解除ページへの導線、項目のオプトイン・アウト',
-    priority: 'Should',
-    category: '品質管理',
+    title: '画面仕様書',
+    description: 'ユーザーインターフェースの詳細仕様を定義する',
+    purpose: '画面の動作仕様とデザインの明確化、開発者とデザイナー間の認識統一',
+    requirements: '画面レイアウト、項目仕様、画面遷移、入力チェック仕様',
+    priority: 'Must',
+    category: 'UI/UX設計',
     templates: [
-      { id: 't3-1', name: 'チェックリストテンプレート', format: 'Excel', url: '#', hasSample: true }
+      { id: 't3-1', name: '画面仕様書テンプレート', format: 'Excel', url: '#', hasSample: true },
+      { id: 't3-2', name: '画面仕様書（PowerPoint版）', format: 'PDF', url: '#', hasSample: true }
     ],
-    isOptedIn: false
-  },
-  {
-    id: '4',
-    title: '成果物に対するレビュー指摘対応の記録（バージョン管理）',
-    description: '変更の経緯と結果の記録',
-    purpose: '変更の経緯と結果の記録',
-    priority: 'Could',
-    category: 'レビュー管理',
-    templates: [
-      { id: 't4-1', name: 'レビュー記録テンプレート', format: 'Excel', url: '#', hasSample: false }
-    ],
-    isOptedIn: false
-  },
-  {
-    id: '8',
-    title: '自動チェック機能',
-    description: '無駄な対人レビュー時間をなくす',
-    purpose: '即座応答、カジュアルな問い合わせ窓口',
-    priority: 'Should',
-    category: '自動化',
-    templates: [],
     isOptedIn: true
   },
   {
-    id: '12',
-    title: '成果物の取捨選択機能',
-    description: '一覧から自分の現実に適したサブセットを抽出し、調整する',
-    purpose: '',
-    priority: 'Could',
-    category: 'カスタマイズ',
-    templates: [],
+    id: '4',
+    title: 'データベース設計書',
+    description: 'データベースの論理設計と物理設計を定義する',
+    purpose: 'データの整合性確保と効率的なデータアクセスの実現',
+    requirements: 'ER図、テーブル定義、インデックス設計、制約定義',
+    priority: 'Must',
+    category: 'データ設計',
+    templates: [
+      { id: 't4-1', name: 'DB設計書テンプレート', format: 'Excel', url: '#', hasSample: true }
+    ],
+    isOptedIn: true
+  },
+  {
+    id: '5',
+    title: '業務フロー図',
+    description: '業務プロセスの流れとシステムとの関係を可視化する',
+    purpose: '業務とシステムの関係性明確化と業務効率化ポイントの特定',
+    requirements: 'As-Is/To-Beフロー、システム処理ポイント、承認フロー',
+    priority: 'Must',
+    category: '業務分析',
+    templates: [
+      { id: 't5-1', name: '業務フロー図テンプレート', format: 'PDF', url: '#', hasSample: true },
+      { id: 't5-2', name: 'Visio形式テンプレート', format: 'Excel', url: '#', hasSample: false }
+    ],
+    isOptedIn: true
+  },
+
+  // Should - 重要成果物
+  {
+    id: '6',
+    title: '詳細設計書',
+    description: 'プログラム単位での詳細な設計仕様を定義する',
+    purpose: '実装レベルでの設計品質向上とコーディング効率化',
+    requirements: 'クラス設計、メソッド仕様、例外処理設計',
+    priority: 'Should',
+    category: '設計書',
+    templates: [
+      { id: 't6-1', name: '詳細設計書テンプレート', format: 'Excel', url: '#', hasSample: true }
+    ],
+    isOptedIn: false
+  },
+  {
+    id: '7',
+    title: 'システム構成図',
+    description: 'システム全体のアーキテクチャと構成要素を定義する',
+    purpose: 'システム全体像の把握とインフラ要件の明確化',
+    requirements: 'ネットワーク構成、サーバー構成、ソフトウェア構成',
+    priority: 'Should',
+    category: 'インフラ設計',
+    templates: [
+      { id: 't7-1', name: 'システム構成図テンプレート', format: 'PDF', url: '#', hasSample: true }
+    ],
+    isOptedIn: true
+  },
+  {
+    id: '8',
+    title: 'テスト仕様書',
+    description: 'システムテストの範囲と詳細手順を定義する',
+    purpose: 'テスト品質の向上と効率的なテスト実施',
+    requirements: 'テストケース、テストデータ、期待結果、テスト手順',
+    priority: 'Should',
+    category: 'テスト',
+    templates: [
+      { id: 't8-1', name: 'テスト仕様書テンプレート', format: 'Excel', url: '#', hasSample: true }
+    ],
     isOptedIn: false
   },
   {
     id: '9',
-    title: 'テンプレを使用したシステム開発マネジメント研修',
-    description: 'おススメの運用方法の周知と共有',
-    purpose: '',
-    priority: 'Could',
-    category: '教育・研修',
+    title: '帳票仕様書',
+    description: '出力帳票の詳細仕様を定義する',
+    purpose: '帳票レイアウトと出力ロジックの明確化',
+    requirements: '帳票レイアウト、項目仕様、出力条件、ソート仕様',
+    priority: 'Should',
+    category: 'UI/UX設計',
     templates: [
-      { id: 't9-1', name: '研修資料', format: 'PDF', url: '#', hasSample: false }
+      { id: 't9-1', name: '帳票仕様書テンプレート', format: 'Excel', url: '#', hasSample: true }
+    ],
+    isOptedIn: false
+  },
+
+  // Could - あれば良い成果物
+  {
+    id: '10',
+    title: '移行計画書',
+    description: '既存システムから新システムへの移行手順を定義する',
+    purpose: '安全で効率的なシステム移行の実現',
+    requirements: '移行手順、移行スケジュール、リスク対策、ロールバック手順',
+    priority: 'Could',
+    category: '移行・運用',
+    templates: [
+      { id: 't10-1', name: '移行計画書テンプレート', format: 'Word', url: '#', hasSample: false }
     ],
     isOptedIn: false
   },
   {
     id: '11',
-    title: 'STDG主催のユーザー向けプライベートチャネル',
-    description: 'ユーザー同士の交流の活性化',
-    purpose: '',
+    title: 'セキュリティ設計書',
+    description: 'システムのセキュリティ要件と対策を定義する',
+    purpose: 'セキュリティリスクの最小化とコンプライアンス対応',
+    requirements: 'アクセス制御、暗号化方式、監査ログ、脆弱性対策',
     priority: 'Could',
-    category: 'コミュニティ',
-    templates: [],
+    category: 'セキュリティ',
+    templates: [
+      { id: 't11-1', name: 'セキュリティ設計書テンプレート', format: 'Excel', url: '#', hasSample: false }
+    ],
     isOptedIn: false
   },
   {
-    id: '10',
-    title: 'STDGによる初回サポート',
-    description: 'ユーザーの不安を取り除く',
-    purpose: 'テンプレの使い方に限らない、PMとの全般的な相談',
-    requirements: '即対応',
-    priority: 'Must',
-    category: 'サポート',
-    templates: [],
-    isOptedIn: true
+    id: '12',
+    title: '運用手順書',
+    description: 'システムの日常運用とメンテナンス手順を定義する',
+    purpose: '安定したシステム運用とトラブル対応力向上',
+    requirements: '日常運用手順、障害対応手順、バックアップ・復旧手順',
+    priority: 'Could',
+    category: '移行・運用',
+    templates: [
+      { id: 't12-1', name: '運用手順書テンプレート', format: 'Word', url: '#', hasSample: false }
+    ],
+    isOptedIn: false
   },
   {
-    id: '7',
-    title: '成果物の目的・使い方などのメタ情報のガイド（成果物を使ったマネジメント下）',
-    description: '成果物を作って終わりにしない',
-    purpose: '',
-    requirements: '解説ページへの導線',
-    priority: 'Must',
-    category: 'ガイド',
+    id: '13',
+    title: 'API仕様書',
+    description: '外部システムとの連携インターフェース仕様を定義する',
+    purpose: 'システム間連携の品質向上と開発効率化',
+    requirements: 'APIエンドポイント、リクエスト/レスポンス仕様、認証方式',
+    priority: 'Could',
+    category: 'インターフェース設計',
     templates: [
-      { id: 't7-1', name: 'ガイドドキュメント', format: 'PDF', url: '#', hasSample: true }
+      { id: 't13-1', name: 'API仕様書テンプレート', format: 'Excel', url: '#', hasSample: false }
     ],
-    isOptedIn: true
+    isOptedIn: false
   }
 ];
 
 export const categories = [
-  '計画・管理',
-  'テンプレート', 
-  '品質管理',
-  'レビュー管理',
-  '自動化',
-  'カスタマイズ',
-  '教育・研修',
-  'コミュニティ',
-  'サポート',
-  'ガイド'
+  '要件定義',
+  '設計書',
+  'UI/UX設計',
+  'データ設計',
+  '業務分析',
+  'インフラ設計',
+  'テスト',
+  'セキュリティ',
+  'インターフェース設計',
+  '移行・運用'
 ];
