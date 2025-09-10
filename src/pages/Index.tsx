@@ -7,8 +7,10 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { deliverables as initialDeliverables } from '@/data/deliverables';
 import { Deliverable, PriorityType } from '@/types/deliverable';
-import { FileSpreadsheet, Settings, Download } from 'lucide-react';
+import { FileSpreadsheet, Settings, Download, GitBranch } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 const Index = () => {
+  const navigate = useNavigate();
   const [deliverables, setDeliverables] = useState(initialDeliverables);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedPriority, setSelectedPriority] = useState<PriorityType | 'all'>('all');
@@ -47,6 +49,14 @@ const Index = () => {
               </div>
             </div>
             <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => navigate('/dependencies')}
+              >
+                <GitBranch className="h-4 w-4 mr-2" />
+                依存関係図
+              </Button>
               <Button variant="outline" size="sm">
                 <Download className="h-4 w-4 mr-2" />
                 エクスポート

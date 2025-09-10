@@ -12,6 +12,8 @@ export interface Deliverable {
   templates: Template[];
   checklist?: ChecklistItem[];
   isOptedIn: boolean;
+  dependencies?: string[]; // 依存する成果物のID配列
+  position?: { x: number; y: number }; // ダイアグラムでの位置
 }
 
 export interface Template {

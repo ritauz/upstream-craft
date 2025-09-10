@@ -14,7 +14,9 @@ export const deliverables: Deliverable[] = [
       { id: 't1-1', name: '要件定義書テンプレート', format: 'Excel', url: '#', hasSample: true },
       { id: 't1-2', name: '要件定義書（Word版）', format: 'Word', url: '#', hasSample: true }
     ],
-    isOptedIn: true
+    isOptedIn: true,
+    dependencies: [],
+    position: { x: 200, y: 100 }
   },
   {
     id: '2',
@@ -28,7 +30,9 @@ export const deliverables: Deliverable[] = [
       { id: 't2-1', name: '基本設計書テンプレート', format: 'Excel', url: '#', hasSample: true },
       { id: 't2-2', name: '基本設計書（Word版）', format: 'Word', url: '#', hasSample: false }
     ],
-    isOptedIn: true
+    isOptedIn: true,
+    dependencies: ['1'],
+    position: { x: 200, y: 250 }
   },
   {
     id: '3',
@@ -42,7 +46,9 @@ export const deliverables: Deliverable[] = [
       { id: 't3-1', name: '画面仕様書テンプレート', format: 'Excel', url: '#', hasSample: true },
       { id: 't3-2', name: '画面仕様書（PowerPoint版）', format: 'PDF', url: '#', hasSample: true }
     ],
-    isOptedIn: true
+    isOptedIn: true,
+    dependencies: ['1', '2'],
+    position: { x: 500, y: 150 }
   },
   {
     id: '4',
@@ -55,7 +61,9 @@ export const deliverables: Deliverable[] = [
     templates: [
       { id: 't4-1', name: 'DB設計書テンプレート', format: 'Excel', url: '#', hasSample: true }
     ],
-    isOptedIn: true
+    isOptedIn: true,
+    dependencies: ['1', '2'],
+    position: { x: 500, y: 300 }
   },
   {
     id: '5',
@@ -69,7 +77,9 @@ export const deliverables: Deliverable[] = [
       { id: 't5-1', name: '業務フロー図テンプレート', format: 'PDF', url: '#', hasSample: true },
       { id: 't5-2', name: 'Visio形式テンプレート', format: 'Excel', url: '#', hasSample: false }
     ],
-    isOptedIn: true
+    isOptedIn: true,
+    dependencies: ['1'],
+    position: { x: 50, y: 250 }
   },
 
   // Should - 重要成果物
@@ -84,7 +94,9 @@ export const deliverables: Deliverable[] = [
     templates: [
       { id: 't6-1', name: '詳細設計書テンプレート', format: 'Excel', url: '#', hasSample: true }
     ],
-    isOptedIn: false
+    isOptedIn: false,
+    dependencies: ['2'],
+    position: { x: 200, y: 400 }
   },
   {
     id: '7',
@@ -97,7 +109,9 @@ export const deliverables: Deliverable[] = [
     templates: [
       { id: 't7-1', name: 'システム構成図テンプレート', format: 'PDF', url: '#', hasSample: true }
     ],
-    isOptedIn: true
+    isOptedIn: true,
+    dependencies: ['2'],
+    position: { x: 350, y: 400 }
   },
   {
     id: '8',
@@ -110,7 +124,9 @@ export const deliverables: Deliverable[] = [
     templates: [
       { id: 't8-1', name: 'テスト仕様書テンプレート', format: 'Excel', url: '#', hasSample: true }
     ],
-    isOptedIn: false
+    isOptedIn: false,
+    dependencies: ['3', '4', '6'],
+    position: { x: 650, y: 200 }
   },
   {
     id: '9',
@@ -123,7 +139,9 @@ export const deliverables: Deliverable[] = [
     templates: [
       { id: 't9-1', name: '帳票仕様書テンプレート', format: 'Excel', url: '#', hasSample: true }
     ],
-    isOptedIn: false
+    isOptedIn: false,
+    dependencies: ['3', '4'],
+    position: { x: 650, y: 350 }
   },
 
   // Could - あれば良い成果物
@@ -138,7 +156,9 @@ export const deliverables: Deliverable[] = [
     templates: [
       { id: 't10-1', name: '移行計画書テンプレート', format: 'Word', url: '#', hasSample: false }
     ],
-    isOptedIn: false
+    isOptedIn: false,
+    dependencies: ['4', '7'],
+    position: { x: 500, y: 500 }
   },
   {
     id: '11',
@@ -151,7 +171,9 @@ export const deliverables: Deliverable[] = [
     templates: [
       { id: 't11-1', name: 'セキュリティ設計書テンプレート', format: 'Excel', url: '#', hasSample: false }
     ],
-    isOptedIn: false
+    isOptedIn: false,
+    dependencies: ['2', '7'],
+    position: { x: 350, y: 550 }
   },
   {
     id: '12',
@@ -164,7 +186,9 @@ export const deliverables: Deliverable[] = [
     templates: [
       { id: 't12-1', name: '運用手順書テンプレート', format: 'Word', url: '#', hasSample: false }
     ],
-    isOptedIn: false
+    isOptedIn: false,
+    dependencies: ['7', '10'],
+    position: { x: 200, y: 550 }
   },
   {
     id: '13',
@@ -177,7 +201,9 @@ export const deliverables: Deliverable[] = [
     templates: [
       { id: 't13-1', name: 'API仕様書テンプレート', format: 'Excel', url: '#', hasSample: false }
     ],
-    isOptedIn: false
+    isOptedIn: false,
+    dependencies: ['2', '6'],
+    position: { x: 50, y: 450 }
   }
 ];
 
