@@ -38,22 +38,22 @@ export const DeliverableDiagram = ({ deliverables, onDeliverableClick }: Deliver
   const getDeliverablePositions = () => {
     const positions: { [key: string]: { x: number; y: number } } = {};
     
-    // レイアウト定義（階層構造）
+    // レイアウト定義（階層構造） - 実際のdeliverable IDを使用
     const layers = [
       // 第1層: 基礎となる成果物
-      { y: 0, items: ['REQ_001'] }, // 要件定義書
+      { y: 0, items: ['1'] }, // 要件定義書
       
-      // 第2層: 要件定義書を基にする成果物
-      { y: 1, items: ['REQ_002', 'BIZ_001'] }, // 基本設計書、業務フロー図
+      // 第2層: 要件定義書を基にする成果物  
+      { y: 1, items: ['2', '5'] }, // 基本設計書、業務フロー図
       
       // 第3層: 設計書系
-      { y: 2, items: ['DES_001', 'DATA_001', 'INFRA_001'] }, // 詳細設計書、データベース設計書、システム構成図
+      { y: 2, items: ['6', '4', '7'] }, // 詳細設計書、データベース設計書、システム構成図
       
       // 第4層: UI/テスト系
-      { y: 3, items: ['UI_001', 'TEST_001', 'REP_001'] }, // 画面仕様書、テスト仕様書、帳票仕様書
+      { y: 3, items: ['3', '8', '9'] }, // 画面仕様書、テスト仕様書、帳票仕様書
       
       // 第5層: 専門的な成果物
-      { y: 4, items: ['API_001', 'SEC_001', 'MIG_001', 'OPS_001'] } // API仕様書、セキュリティ設計書、移行計画書、運用手順書
+      { y: 4, items: ['13', '12', '10', '11'] } // API仕様書、セキュリティ設計書、移行計画書、運用手順書
     ];
     
     layers.forEach((layer, layerIndex) => {
