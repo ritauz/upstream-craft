@@ -43,6 +43,7 @@ const Dependencies = () => {
           <DeliverableModal
             deliverable={selectedDeliverable}
             onClose={() => setSelectedDeliverable(null)}
+            allDeliverables={deliverables}
           />
         )}
       </div>

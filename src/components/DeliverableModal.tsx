@@ -8,6 +8,7 @@ import { Download, FileText, Target, CheckSquare } from 'lucide-react';
 interface DeliverableModalProps {
   deliverable: Deliverable;
   onClose: () => void;
+  allDeliverables: Deliverable[]; // 依存関係の名前解決のために追加
 }
 
 const getPriorityColor = (priority: string) => {
@@ -29,12 +30,18 @@ const getFormatIcon = (format: string) => {
   }
 };
 
-export const DeliverableModal = ({ deliverable, onClose }: DeliverableModalProps) => {
+export const DeliverableModal = ({ deliverable, onClose, allDeliverables }: DeliverableModalProps) => {
   const handleDownload = (templateUrl: string, templateName: string) => {
     // 実際のダウンロード処理はここに実装
     console.log(`Download: ${templateName} from ${templateUrl}`);
     // 仮の処理として、アラートを表示
     alert(`${templateName} をダウンロードします`);
+  };
+
+  // 依存関係IDから成果物名を取得するヘルパー関数
+  const getDependencyTitle = (depId: string) => {
+    const dep = allDeliverables.find(d => d.id === depId);
+    return dep ? dep.title : depId;
   };
 
   return (
@@ -134,14 +141,27 @@ export const DeliverableModal = ({ deliverable, onClose }: DeliverableModalProps
             </div>
           </div>
 
-          {/* 依存関係 */}
+          {/* インプット成果物 */}
           {deliverable.dependencies && deliverable.dependencies.length > 0 && (
             <div>
-              <h3 className="font-semibold text-foreground mb-2">
-                依存する成果物
+              <h3 className="font-semibold text-foreground mb-3">
+                インプットとなる成果物
               </h3>
-              <div className="text-sm text-muted-foreground">
-                この成果物を作成する前に、以下の成果物が必要です
+              <div className="text-sm text-muted-foreground mb-3">
+                この成果物を作成するために必要な前提成果物です
+              </div>
+              <div className="space-y-2">
+                {deliverable.dependencies.map((depId, index) => (
+                  <div 
+                    key={depId}
+                    className="flex items-center gap-2 p-2 bg-muted/30 rounded border"
+                  >
+                    <div className="w-2 h-2 bg-primary rounded-full"></div>
+                    <span className="text-sm font-medium text-foreground">
+                      {getDependencyTitle(depId)}
+                    </span>
+                  </div>
+                ))}
               </div>
             </div>
           )}
