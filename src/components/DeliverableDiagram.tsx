@@ -90,15 +90,28 @@ export const DeliverableDiagram = ({ deliverables, onDeliverableClick }: Deliver
   const renderArrows = () => {
     const arrows = [];
     
-    // グループ内の成果物の位置を計算
-    const getDeliverablePosition = (deliverableId: string) => {
-      for (const group of Object.values(groups)) {
+    // グループ内の成果物の位置を計算（カードの端点を考慮）
+    const getDeliverableConnectionPoint = (deliverableId: string, isSource: boolean) => {
+      for (const [groupKey, group] of Object.entries(groups)) {
         const itemIndex = group.items.findIndex(item => item.id === deliverableId);
         if (itemIndex !== -1) {
-          return {
-            x: group.position.x + 140, // グループ内の中央
-            y: group.position.y + 80 + (itemIndex * 120) // グループ内での縦位置
-          };
+          const cardWidth = 250;
+          const cardHeight = 100;
+          const cardX = group.position.x + 15; // グループ内のパディング
+          const cardY = group.position.y + 60 + (itemIndex * 120); // グループタイトル + カード間隔
+          
+          // ソース（出力）の場合は右端、ターゲット（入力）の場合は左端
+          if (isSource) {
+            return {
+              x: cardX + cardWidth, // 右端
+              y: cardY + cardHeight / 2 // 中央
+            };
+          } else {
+            return {
+              x: cardX, // 左端
+              y: cardY + cardHeight / 2 // 中央
+            };
+          }
         }
       }
       return null;
@@ -106,23 +119,32 @@ export const DeliverableDiagram = ({ deliverables, onDeliverableClick }: Deliver
     
     deliverables.forEach(deliverable => {
       if (deliverable.dependencies && deliverable.dependencies.length > 0) {
-        deliverable.dependencies.forEach(depId => {
-          const fromPos = getDeliverablePosition(depId);
-          const toPos = getDeliverablePosition(deliverable.id);
+        deliverable.dependencies.forEach((depId, index) => {
+          const fromPos = getDeliverableConnectionPoint(depId, true);
+          const toPos = getDeliverableConnectionPoint(deliverable.id, false);
           
           if (fromPos && toPos) {
+            // 矢印が重ならないように少しオフセットを追加
+            const offsetY = (index - (deliverable.dependencies!.length - 1) / 2) * 10;
             const arrowId = `arrow-${depId}-${deliverable.id}`;
+            
+            // ベジェ曲線を使って滑らかな矢印を描画
+            const midX = (fromPos.x + toPos.x) / 2;
+            const curvature = Math.abs(toPos.x - fromPos.x) * 0.3;
+            
             arrows.push(
               <g key={arrowId}>
-                <line
-                  x1={fromPos.x}
-                  y1={fromPos.y}
-                  x2={toPos.x}
-                  y2={toPos.y}
+                <path
+                  d={`M ${fromPos.x} ${fromPos.y + offsetY} 
+                      C ${fromPos.x + curvature} ${fromPos.y + offsetY}, 
+                        ${toPos.x - curvature} ${toPos.y + offsetY}, 
+                        ${toPos.x - 8} ${toPos.y + offsetY}`}
                   stroke="hsl(var(--primary))"
                   strokeWidth="2"
+                  fill="none"
                   markerEnd="url(#arrowhead)"
                   strokeDasharray="5,5"
+                  opacity="0.7"
                 />
               </g>
             );
@@ -149,7 +171,7 @@ export const DeliverableDiagram = ({ deliverables, onDeliverableClick }: Deliver
 
         {/* 構造化された依存関係図 */}
         <div className="relative w-full">
-          <div className="relative w-full bg-muted/10 rounded-lg p-6" style={{ minHeight: '600px' }}>
+          <div className="relative w-full bg-muted/10 rounded-lg p-6" style={{ minHeight: '700px', minWidth: '1000px' }}>
             {/* SVG for arrows */}
             <svg
               className="absolute inset-0 w-full h-full pointer-events-none"
@@ -208,7 +230,11 @@ export const DeliverableDiagram = ({ deliverables, onDeliverableClick }: Deliver
                           ? 'border-primary bg-primary/5' 
                           : 'border-muted'
                       }`}
-                      style={{ zIndex: 2 }}
+                      style={{ 
+                        zIndex: 10,
+                        width: '250px',
+                        minHeight: '100px'
+                      }}
                       onClick={() => onDeliverableClick(deliverable)}
                     >
                       <div className="flex items-start gap-2">

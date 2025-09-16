@@ -5,18 +5,27 @@ import { StatsCard } from '@/components/StatsCard';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { deliverables as initialDeliverables } from '@/data/deliverables';
-import { Deliverable, PriorityType } from '@/types/deliverable';
-import { FileSpreadsheet, Settings, Download, GitBranch } from 'lucide-react';
+import { Deliverable, PriorityType, DeliverableType } from '@/types/deliverable';
+import { FileSpreadsheet, Settings, Download, GitBranch, AlertTriangle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { assessDeliverableSelectionRisk } from '@/utils/riskAssessment';
 const Index = () => {
   const navigate = useNavigate();
   const [deliverables, setDeliverables] = useState(initialDeliverables);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedPriority, setSelectedPriority] = useState<PriorityType | 'all'>('all');
   const [selectedCategory, setSelectedCategory] = useState('all');
+  const [selectedType, setSelectedType] = useState<DeliverableType | 'all'>('all');
   const [showOptedInOnly, setShowOptedInOnly] = useState(false);
   const [selectedDeliverable, setSelectedDeliverable] = useState<Deliverable | null>(null);
+
+  // リスク評価
+  const riskAssessment = useMemo(() => {
+    const selectedDeliverables = deliverables.filter(d => d.isOptedIn);
+    return assessDeliverableSelectionRisk(deliverables, selectedDeliverables);
+  }, [deliverables]);
   const filteredDeliverables = useMemo(() => {
     return deliverables.filter(deliverable => {
       const matchesSearch = deliverable.title.toLowerCase().includes(searchTerm.toLowerCase()) || deliverable.description.toLowerCase().includes(searchTerm.toLowerCase());

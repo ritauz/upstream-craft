@@ -32,10 +32,33 @@ const getFormatIcon = (format: string) => {
 
 export const DeliverableModal = ({ deliverable, onClose, allDeliverables }: DeliverableModalProps) => {
   const handleDownload = (templateUrl: string, templateName: string) => {
-    // 実際のダウンロード処理はここに実装
-    console.log(`Download: ${templateName} from ${templateUrl}`);
-    // 仮の処理として、アラートを表示
-    alert(`${templateName} をダウンロードします`);
+    // Markdownファイルの実際のダウンロード処理
+    const content = `# ${templateName}
+
+成果物: ${deliverable.title}
+
+## 概要
+${deliverable.description}
+
+## 目的
+${deliverable.purpose}
+
+${deliverable.requirements ? `## 記載要件
+${deliverable.requirements}` : ''}
+
+---
+このテンプレートを使用して${deliverable.title}を作成してください。
+`;
+    
+    const blob = new Blob([content], { type: 'text/markdown' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${deliverable.title}_${templateName}.md`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   // 依存関係IDから成果物名を取得するヘルパー関数
