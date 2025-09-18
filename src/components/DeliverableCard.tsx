@@ -5,6 +5,7 @@ import { Switch } from '@/components/ui/switch';
 import { Deliverable, PriorityType } from '@/types/deliverable';
 import { Download, FileText, Eye, CheckSquare } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { downloadMarkdown } from '@/utils/fileDownload';
 
 interface DeliverableCardProps {
   deliverable: Deliverable;
@@ -25,10 +26,10 @@ const getPriorityColor = (priority: PriorityType) => {
   }
 };
 
-export const DeliverableCard = ({ 
-  deliverable, 
-  onToggleOptIn, 
-  onViewDetails 
+export const DeliverableCard = ({
+  deliverable,
+  onToggleOptIn,
+  onViewDetails
 }: DeliverableCardProps) => {
   return (
     <Card className={cn(
@@ -39,8 +40,8 @@ export const DeliverableCard = ({
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-2">
-              <Badge 
-                variant="secondary" 
+              <Badge
+                variant="secondary"
                 className={cn(
                   "text-xs font-medium",
                   `bg-${getPriorityColor(deliverable.priority)} text-${getPriorityColor(deliverable.priority)}-foreground`
@@ -65,12 +66,12 @@ export const DeliverableCard = ({
           </div>
         </div>
       </CardHeader>
-      
+
       <CardContent className="pt-0">
         <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
           {deliverable.description}
         </p>
-        
+
         {deliverable.purpose && (
           <div className="mb-4">
             <h4 className="text-xs font-medium text-card-foreground mb-1">目的・意義</h4>
@@ -90,7 +91,7 @@ export const DeliverableCard = ({
                   variant="outline"
                   size="sm"
                   className="h-7 text-xs"
-                  onClick={() => window.open(template.url, '_blank')}
+                  onClick={() => downloadMarkdown(template.name, template.content.markdown)}
                 >
                   <Download className="h-3 w-3 mr-1" />
                   {template.format}

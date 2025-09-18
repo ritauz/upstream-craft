@@ -1,4 +1,5 @@
 import type { Config } from "tailwindcss";
+import typography from '@tailwindcss/typography'
 
 export default {
 	darkMode: ["class"],
@@ -18,6 +19,11 @@ export default {
 			}
 		},
 		extend: {
+			typography: {
+				DEFAULT: {
+					css: { maxWidth: 'none' } // ドキュメント領域を制限しない
+				}
+			},
 			colors: {
 				border: 'hsl(var(--border))',
 				input: 'hsl(var(--input))',
@@ -112,5 +118,5 @@ export default {
 			}
 		}
 	},
-	plugins: [require("tailwindcss-animate")],
+	plugins: [require("tailwindcss-animate"), typography],
 } satisfies Config;

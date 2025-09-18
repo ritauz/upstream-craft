@@ -23,7 +23,6 @@ export interface Template {
   id: string;
   name: string;
   format: 'Excel' | 'MD' | 'Word' | 'PDF';
-  url: string;
   hasSample: boolean;
   content?: TemplateContent; // MDテンプレートの場合のコンテンツ
   sections?: TemplateSection[]; // カスタマイズ可能なセクション
