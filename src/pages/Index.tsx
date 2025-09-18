@@ -32,10 +32,11 @@ const Index = () => {
       const matchesSearch = deliverable.title.toLowerCase().includes(searchTerm.toLowerCase()) || deliverable.description.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesPriority = selectedPriority === 'all' || deliverable.priority === selectedPriority;
       const matchesCategory = selectedCategory === 'all' || deliverable.category === selectedCategory;
+      const matchesType = selectedType === 'all' || deliverable.type === selectedType;
       const matchesOptIn = !showOptedInOnly || deliverable.isOptedIn;
-      return matchesSearch && matchesPriority && matchesCategory && matchesOptIn;
+      return matchesSearch && matchesPriority && matchesCategory && matchesType && matchesOptIn;
     });
-  }, [deliverables, searchTerm, selectedPriority, selectedCategory, showOptedInOnly]);
+  }, [deliverables, searchTerm, selectedPriority, selectedCategory, selectedType, showOptedInOnly]);
   const handleToggleOptIn = (id: string, isOptedIn: boolean) => {
     setDeliverables(prev => prev.map(d => d.id === id ? {
       ...d,
@@ -93,7 +94,51 @@ const Index = () => {
     <main className="container mx-auto px-4 py-6">
       <StatsCard deliverables={deliverables} filteredDeliverables={filteredDeliverables} />
 
-      <FilterBar searchTerm={searchTerm} onSearchChange={setSearchTerm} selectedPriority={selectedPriority} onPriorityChange={setSelectedPriority} selectedCategory={selectedCategory} onCategoryChange={setSelectedCategory} showOptedInOnly={showOptedInOnly} onOptedInToggle={() => setShowOptedInOnly(!showOptedInOnly)} />
+      {/* Risk Assessment Display */}
+      {riskAssessment && (
+        <div className="mb-6">
+          <Alert className={`border-l-4 ${
+            riskAssessment.overallRisk === 'high' ? 'border-l-destructive' :
+            riskAssessment.overallRisk === 'medium' ? 'border-l-warning' : 
+            'border-l-success'
+          }`}>
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription>
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <strong>プロジェクトリスク:</strong>
+                  <Badge className={
+                    riskAssessment.overallRisk === 'high' ? 'bg-destructive text-destructive-foreground' :
+                    riskAssessment.overallRisk === 'medium' ? 'bg-warning text-warning-foreground' : 
+                    'bg-success text-success-foreground'
+                  }>
+                    {riskAssessment.overallRisk === 'high' ? '高' : 
+                     riskAssessment.overallRisk === 'medium' ? '中' : '低'}
+                  </Badge>
+                </div>
+                {riskAssessment.recommendations.length > 0 && (
+                  <div className="text-sm">
+                    <strong>推奨:</strong> {riskAssessment.recommendations.join('、')}
+                  </div>
+                )}
+              </div>
+            </AlertDescription>
+          </Alert>
+        </div>
+      )}
+
+      <FilterBar 
+        searchTerm={searchTerm} 
+        onSearchChange={setSearchTerm} 
+        selectedPriority={selectedPriority} 
+        onPriorityChange={setSelectedPriority} 
+        selectedCategory={selectedCategory} 
+        onCategoryChange={setSelectedCategory}
+        selectedType={selectedType}
+        onTypeChange={setSelectedType}
+        showOptedInOnly={showOptedInOnly} 
+        onOptedInToggle={() => setShowOptedInOnly(!showOptedInOnly)} 
+      />
 
       <div className="mt-6">
         {filteredDeliverables.length === 0 ? <div className="text-center py-12">
@@ -102,6 +147,7 @@ const Index = () => {
             setSearchTerm('');
             setSelectedPriority('all');
             setSelectedCategory('all');
+            setSelectedType('all');
             setShowOptedInOnly(false);
           }}>
             フィルターをリセット

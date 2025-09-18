@@ -1,9 +1,11 @@
-import { Deliverable } from '@/types/deliverable';
+import { Deliverable, Template } from '@/types/deliverable';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { Download, FileText, Target, CheckSquare } from 'lucide-react';
+import { Download, FileText, Target, CheckSquare, Settings } from 'lucide-react';
+import { TemplateCustomizationModal } from './TemplateCustomizationModal';
+import { useState } from 'react';
 
 interface DeliverableModalProps {
   deliverable: Deliverable;
@@ -31,6 +33,18 @@ const getFormatIcon = (format: string) => {
 };
 
 export const DeliverableModal = ({ deliverable, onClose, allDeliverables }: DeliverableModalProps) => {
+  const [customizationTemplate, setCustomizationTemplate] = useState<Template | null>(null);
+
+  const handleTemplateAction = (template: Template) => {
+    if (template.sections && template.sections.length > 0) {
+      // カスタマイズ可能なテンプレートの場合、カスタマイズモーダルを開く
+      setCustomizationTemplate(template);
+    } else {
+      // 直接ダウンロード
+      handleDownload('', template.name);
+    }
+  };
+
   const handleDownload = (templateUrl: string, templateName: string) => {
     // Markdownファイルの実際のダウンロード処理
     const content = `# ${templateName}
@@ -61,7 +75,17 @@ ${deliverable.requirements}` : ''}
     URL.revokeObjectURL(url);
   };
 
-  // 依存関係IDから成果物名を取得するヘルパー関数
+  const handleCustomizedDownload = (customizedContent: string) => {
+    const blob = new Blob([customizedContent], { type: 'text/markdown' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${deliverable.title}_カスタマイズ済み.md`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
   const getDependencyTitle = (depId: string) => {
     const dep = allDeliverables.find(d => d.id === depId);
     return dep ? dep.title : depId;
@@ -153,11 +177,20 @@ ${deliverable.requirements}` : ''}
                   </div>
                   <Button
                     size="sm"
-                    onClick={() => handleDownload(template.url, template.name)}
+                    onClick={() => handleTemplateAction(template)}
                     className="flex items-center gap-2"
                   >
-                    <Download className="w-4 h-4" />
-                    ダウンロード
+                    {template.sections && template.sections.length > 0 ? (
+                      <>
+                        <Settings className="w-4 h-4" />
+                        カスタマイズ
+                      </>
+                    ) : (
+                      <>
+                        <Download className="w-4 h-4" />
+                        ダウンロード
+                      </>
+                    )}
                   </Button>
                 </div>
               ))}
@@ -190,6 +223,16 @@ ${deliverable.requirements}` : ''}
           )}
         </div>
       </DialogContent>
+
+      {/* Template Customization Modal */}
+      {customizationTemplate && (
+        <TemplateCustomizationModal
+          template={customizationTemplate}
+          isOpen={!!customizationTemplate}
+          onClose={() => setCustomizationTemplate(null)}
+          onDownload={handleCustomizedDownload}
+        />
+      )}
     </Dialog>
   );
 };

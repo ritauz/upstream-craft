@@ -8,7 +8,7 @@ import {
   SelectTrigger, 
   SelectValue 
 } from '@/components/ui/select';
-import { PriorityType } from '@/types/deliverable';
+import { PriorityType, DeliverableType } from '@/types/deliverable';
 import { Search, Filter, X } from 'lucide-react';
 import { categories } from '@/data/deliverables';
 
@@ -19,6 +19,8 @@ interface FilterBarProps {
   onPriorityChange: (priority: PriorityType | 'all') => void;
   selectedCategory: string;
   onCategoryChange: (category: string) => void;
+  selectedType: DeliverableType | 'all';
+  onTypeChange: (type: DeliverableType | 'all') => void;
   showOptedInOnly: boolean;
   onOptedInToggle: () => void;
 }
@@ -30,6 +32,8 @@ export const FilterBar = ({
   onPriorityChange,
   selectedCategory,
   onCategoryChange,
+  selectedType,
+  onTypeChange,
   showOptedInOnly,
   onOptedInToggle
 }: FilterBarProps) => {
@@ -37,12 +41,14 @@ export const FilterBar = ({
     searchTerm || 
     selectedPriority !== 'all' || 
     selectedCategory !== 'all' || 
+    selectedType !== 'all' ||
     showOptedInOnly;
 
   const clearFilters = () => {
     onSearchChange('');
     onPriorityChange('all');
     onCategoryChange('all');
+    onTypeChange('all');
     if (showOptedInOnly) onOptedInToggle();
   };
 
@@ -86,6 +92,17 @@ export const FilterBar = ({
             </SelectContent>
           </Select>
 
+          <Select value={selectedType} onValueChange={onTypeChange}>
+            <SelectTrigger className="w-36">
+              <SelectValue placeholder="タイプ" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">全てのタイプ</SelectItem>
+              <SelectItem value="application">アプリケーション</SelectItem>
+              <SelectItem value="infrastructure">インフラ</SelectItem>
+            </SelectContent>
+          </Select>
+
           <Button
             variant={showOptedInOnly ? "default" : "outline"}
             size="sm"
@@ -117,6 +134,12 @@ export const FilterBar = ({
             <Badge variant="secondary" className="gap-1">
               {selectedCategory}
               <X className="h-3 w-3 cursor-pointer" onClick={() => onCategoryChange('all')} />
+            </Badge>
+          )}
+          {selectedType !== 'all' && (
+            <Badge variant="secondary" className="gap-1">
+              {selectedType === 'application' ? 'アプリケーション' : 'インフラ'}
+              <X className="h-3 w-3 cursor-pointer" onClick={() => onTypeChange('all')} />
             </Badge>
           )}
           {showOptedInOnly && (
