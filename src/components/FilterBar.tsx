@@ -78,20 +78,6 @@ export const FilterBar = ({
             </SelectContent>
           </Select>
 
-          <Select value={selectedCategory} onValueChange={onCategoryChange}>
-            <SelectTrigger className="w-40">
-              <SelectValue placeholder="カテゴリ" />
-            </SelectTrigger>
-            <SelectContent>
-              
-              {categories.map((category) => (
-                <SelectItem key={category} value={category}>
-                  {category}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
           <Select value={selectedType} onValueChange={onTypeChange}>
             <SelectTrigger className="w-36">
               <SelectValue placeholder="タイプ" />
