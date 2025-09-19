@@ -135,10 +135,6 @@ const Index = () => {
           </div>
         </div>
 
-        <StatsCard
-          deliverables={deliverables}
-          filteredDeliverables={filteredDeliverables}
-        />
 
         {/* Risk Assessment Display */}
         {riskAssessment && (

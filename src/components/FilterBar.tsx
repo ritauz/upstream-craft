@@ -54,7 +54,60 @@ export const FilterBar = ({
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col sm:flex-row gap-4">
+      <div className="flex items-center gap-4">
+        {/* タイプ選択 (アプリ/インフラ) */}
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-muted-foreground">タイプ:</span>
+          <div className="flex rounded-lg border p-1 bg-card">
+            <Button
+              variant={selectedType === 'application' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => onTypeChange('application')}
+            >
+              アプリ
+            </Button>
+            <Button
+              variant={selectedType === 'infrastructure' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => onTypeChange('infrastructure')}
+            >
+              インフラ
+            </Button>
+            <Button
+              variant={selectedType === 'all' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => onTypeChange('all')}
+            >
+              全て
+            </Button>
+          </div>
+        </div>
+
+        {/* 優先度フィルター */}
+        <Select value={selectedPriority} onValueChange={onPriorityChange}>
+          <SelectTrigger className="w-32">
+            <SelectValue placeholder="優先度" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">全ての優先度</SelectItem>
+            <SelectItem value="Must">Must</SelectItem>
+            <SelectItem value="Should">Should</SelectItem>
+            <SelectItem value="Could">Could</SelectItem>
+          </SelectContent>
+        </Select>
+
+        {/* 選択中のみフィルター */}
+        <Button
+          variant={showOptedInOnly ? "default" : "outline"}
+          size="sm"
+          onClick={onOptedInToggle}
+          className="whitespace-nowrap"
+        >
+          <Filter className="h-4 w-4 mr-1" />
+          選択中のみ
+        </Button>
+
+        {/* 検索窓 */}
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
@@ -63,41 +116,6 @@ export const FilterBar = ({
             onChange={(e) => onSearchChange(e.target.value)}
             className="pl-10"
           />
-        </div>
-
-        <div className="flex gap-2">
-          <Select value={selectedPriority} onValueChange={onPriorityChange}>
-            <SelectTrigger className="w-32">
-              <SelectValue placeholder="優先度" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">全ての優先度</SelectItem>
-              <SelectItem value="Must">Must</SelectItem>
-              <SelectItem value="Should">Should</SelectItem>
-              <SelectItem value="Could">Could</SelectItem>
-            </SelectContent>
-          </Select>
-
-          <Select value={selectedType} onValueChange={onTypeChange}>
-            <SelectTrigger className="w-36">
-              <SelectValue placeholder="タイプ" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">全てのタイプ</SelectItem>
-              <SelectItem value="application">アプリケーション</SelectItem>
-              <SelectItem value="infrastructure">インフラ</SelectItem>
-            </SelectContent>
-          </Select>
-
-          <Button
-            variant={showOptedInOnly ? "default" : "outline"}
-            size="sm"
-            onClick={onOptedInToggle}
-            className="whitespace-nowrap"
-          >
-            <Filter className="h-4 w-4 mr-1" />
-            選択中のみ
-          </Button>
         </div>
       </div>
 
@@ -114,12 +132,6 @@ export const FilterBar = ({
             <Badge variant="secondary" className="gap-1">
               {selectedPriority}
               <X className="h-3 w-3 cursor-pointer" onClick={() => onPriorityChange('all')} />
-            </Badge>
-          )}
-          {selectedCategory !== 'all' && (
-            <Badge variant="secondary" className="gap-1">
-              {selectedCategory}
-              <X className="h-3 w-3 cursor-pointer" onClick={() => onCategoryChange('all')} />
             </Badge>
           )}
           {selectedType !== 'all' && (
