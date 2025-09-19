@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { FilterBar } from '@/components/FilterBar';
+
 import { DeliverableCard } from '@/components/DeliverableCard';
 import { StatsCard } from '@/components/StatsCard';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -8,7 +8,9 @@ import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { deliverables as initialDeliverables } from '@/data/deliverables';
 import { Deliverable, PriorityType, DeliverableType } from '@/types/deliverable';
-import { FileSpreadsheet, Settings, Download, GitBranch, BookOpenText, AlertTriangle } from 'lucide-react';
+import { FileSpreadsheet, Settings, Download, GitBranch, BookOpenText, AlertTriangle, Filter, Search } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
 import { useNavigate } from 'react-router-dom';
 import { assessDeliverableSelectionRisk } from '@/utils/riskAssessment';
 import { downloadMarkdown } from '@/utils/fileDownload';
@@ -107,31 +109,94 @@ const Index = () => {
 
       {/* Main Content */}
       <main className="container mx-auto px-4 py-6">
-        {/* 追加: フェーズのセグメントトグル */}
-        <div className="mb-4 flex items-center gap-2">
-          <span className="text-sm text-muted-foreground">フェーズ:</span>
-          <div className="flex rounded-lg border p-1 bg-card">
-            <Button
-              variant={phase === '要件定義' ? 'default' : 'ghost'}
-              size="sm"
-              onClick={() => {
-                setPhase('要件定義');
-                // 必要ならカテゴリフィルタも同期させる場合は以下を有効化
-                // setSelectedCategory('all'); // or setSelectedCategory('要件定義');
-              }}
-            >
-              要件定義
-            </Button>
-            <Button
-              variant={phase === '基本設計' ? 'default' : 'ghost'}
-              size="sm"
-              onClick={() => {
-                setPhase('基本設計');
-                // setSelectedCategory('all'); // or setSelectedCategory('基本設計');
-              }}
-            >
-              基本設計
-            </Button>
+        {/* フェーズ選択とフィルター */}
+        <div className="mb-4 flex items-center gap-4">
+          {/* フェーズ選択 */}
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground">フェーズ:</span>
+            <div className="flex rounded-lg border p-1 bg-card">
+              <Button
+                variant={phase === '要件定義' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => {
+                  setPhase('要件定義');
+                }}
+              >
+                要件定義
+              </Button>
+              <Button
+                variant={phase === '基本設計' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => {
+                  setPhase('基本設計');
+                }}
+              >
+                基本設計
+              </Button>
+            </div>
+          </div>
+
+          {/* タイプ選択 (アプリ/インフラ) */}
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground">タイプ:</span>
+            <div className="flex rounded-lg border p-1 bg-card">
+              <Button
+                variant={selectedType === 'application' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setSelectedType('application')}
+              >
+                アプリ
+              </Button>
+              <Button
+                variant={selectedType === 'infrastructure' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setSelectedType('infrastructure')}
+              >
+                インフラ
+              </Button>
+              <Button
+                variant={selectedType === 'all' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setSelectedType('all')}
+              >
+                全て
+              </Button>
+            </div>
+          </div>
+
+          {/* 優先度フィルター */}
+          <Select value={selectedPriority} onValueChange={(value) => setSelectedPriority(value as PriorityType | 'all')}>
+            <SelectTrigger className="w-32">
+              <SelectValue placeholder="優先度" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">全ての優先度</SelectItem>
+              <SelectItem value="Must">Must</SelectItem>
+              <SelectItem value="Should">Should</SelectItem>
+              <SelectItem value="Could">Could</SelectItem>
+            </SelectContent>
+          </Select>
+
+          {/* 選択中のみフィルター */}
+          <Button
+            variant={showOptedInOnly ? "default" : "outline"}
+            size="sm"
+            onClick={() => setShowOptedInOnly(!showOptedInOnly)}
+            className="whitespace-nowrap"
+          >
+            <Filter className="h-4 w-4 mr-1" />
+            選択中のみ
+          </Button>
+
+          {/* 検索窓 */}
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="成果物を検索..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
           </div>
         </div>
 
@@ -184,18 +249,6 @@ const Index = () => {
           </div>
         )}
 
-        <FilterBar
-          searchTerm={searchTerm}
-          onSearchChange={setSearchTerm}
-          selectedPriority={selectedPriority}
-          onPriorityChange={setSelectedPriority}
-          selectedCategory={selectedCategory}
-          onCategoryChange={setSelectedCategory}
-          selectedType={selectedType}
-          onTypeChange={setSelectedType}
-          showOptedInOnly={showOptedInOnly}
-          onOptedInToggle={() => setShowOptedInOnly(!showOptedInOnly)}
-        />
 
         <div className="mt-6">
           {filteredDeliverables.length === 0 ? (
