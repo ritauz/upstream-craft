@@ -27,8 +27,10 @@ export default function Sidebar({ tree, activeSlug, className }: Props) {
           key={node.item.slug}
           to={to}
           className={clsx(
-            'block rounded px-2 py-1 text-sm',
-            active ? 'bg-blue-100 text-blue-800' : 'hover:bg-gray-100'
+            'block rounded-md px-3 py-1.5 text-sm transition-colors',
+            active 
+              ? 'bg-primary/10 text-primary font-medium' 
+              : 'hover:bg-gray-50 text-gray-600 hover:text-gray-900'
           )}
         >
           {node.item.title}
@@ -43,23 +45,25 @@ export default function Sidebar({ tree, activeSlug, className }: Props) {
       const active = current === node.slug
 
       return (
-        <div key={node.name} className={clsx(depth > 0 && 'ml-3')}>
+        <div key={node.name} className={clsx(depth > 0 && 'ml-4 border-l border-gray-200 pl-3')}>
           {node.slug ? (
             <Link
               to={`/docs/${node.slug}`}
               className={clsx(
-                'block rounded px-2 py-1 text-sm font-semibold',
-                active ? 'bg-blue-100 text-blue-800' : 'hover:bg-gray-100'
+                'block rounded-md px-3 py-2 text-sm font-semibold transition-colors',
+                active 
+                  ? 'bg-primary/10 text-primary border border-primary/20' 
+                  : 'hover:bg-gray-100 text-gray-700 hover:text-gray-900'
               )}
             >
               {node.title}
             </Link>
           ) : (
-            <div className="mt-3 mb-1 text-sm font-semibold text-gray-700">
+            <div className="mt-4 mb-2 px-3 py-1 text-sm font-bold text-gray-900 border-b border-gray-200">
               {node.title}
             </div>
           )}
-          <div className="space-y-1">
+          <div className="space-y-1 mt-2">
             {node.children.map(ch => renderNode(ch, depth + 1))}
           </div>
         </div>
@@ -72,7 +76,7 @@ export default function Sidebar({ tree, activeSlug, className }: Props) {
     <aside
       className={clsx(
         'shrink-0 border-r border-gray-200 p-4 overflow-y-auto',
-        'fixed top-[64px] left-0 h-[calc(100vh-64px)] w-64', // ← 固定化
+        'fixed top-[64px] left-0 h-[calc(100vh-64px)] w-64 bg-background', // ← 固定化
         className
       )}
     >

@@ -83,7 +83,7 @@ export const FilterBar = ({
               <SelectValue placeholder="カテゴリ" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">全てのカテゴリ</SelectItem>
+              
               {categories.map((category) => (
                 <SelectItem key={category} value={category}>
                   {category}

@@ -98,6 +98,25 @@ export const deliverables: Deliverable[] = [
     dependencies: ['req-01', 'req-02', 'req-03', 'req-04'],
     position: { x: 920, y: 120 }
   },
+  {
+    id: 'req-06',
+    title: 'インフラ要件定義書',
+    description: 'ネットワーク・サーバー・ストレージ等のインフラ要件',
+    purpose: 'システム基盤の要件明確化',
+    requirements: 'ネットワーク/サーバー/ストレージ/セキュリティ/監視',
+    priority: 'Must',
+    category: '要件定義',
+    type: 'infrastructure',
+    templates: [
+      {
+        id: 'tpl-req-06', name: 'インフラ要件定義書（Markdown）', format: 'MD', hasSample: true,
+        content: { markdown: '# インフラ要件定義書', sections: ['ネットワーク', 'サーバー', 'ストレージ', 'セキュリティ', '監視'] }
+      }
+    ],
+    isOptedIn: true,
+    dependencies: ['req-04'],
+    position: { x: 1120, y: 120 }
+  },
 
   // === 基本設計（Basic Design） ===
   {
@@ -213,6 +232,25 @@ export const deliverables: Deliverable[] = [
     isOptedIn: true,
     dependencies: ['req-04', 'bd-01'],
     position: { x: 860, y: 360 }
+  },
+  {
+    id: 'bd-08',
+    title: 'インフラ基本設計書',
+    description: 'サーバー構成・ネットワーク設計・セキュリティ方式の詳細設計',
+    purpose: 'インフラ要件を満たす具体的な設計',
+    requirements: 'サーバー構成/ネットワーク設計/セキュリティ/監視設計',
+    priority: 'Must',
+    category: '基本設計',
+    type: 'infrastructure',
+    templates: [
+      {
+        id: 'tpl-bd-08', name: 'インフラ基本設計書（Markdown）', format: 'MD', hasSample: true,
+        content: { markdown: '# インフラ基本設計書', sections: ['サーバー構成', 'ネットワーク設計', 'セキュリティ', '監視設計'] }
+      }
+    ],
+    isOptedIn: true,
+    dependencies: ['req-06', 'bd-01'],
+    position: { x: 1060, y: 360 }
   },
 ]
 
