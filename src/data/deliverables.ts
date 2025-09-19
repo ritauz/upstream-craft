@@ -1,3 +1,4 @@
+// src/data/deliverables.ts
 import { Deliverable } from '@/types/deliverable'
 
 export const deliverables: Deliverable[] = [
@@ -46,8 +47,8 @@ export const deliverables: Deliverable[] = [
     description: 'ユースケース図／業務フロー図（As-Is/To-Be）',
     purpose: '利用シナリオと業務手順の可視化',
     requirements: 'アクター/シナリオ/入出力/分岐/イベント',
-    priority: 'Must',
-    category: '業務分析',
+    priority: 'Should', // ← 付け直し：Must → Should
+    category: '要件定義', // ← フェーズで統一
     type: 'application',
     templates: [
       {
@@ -66,7 +67,7 @@ export const deliverables: Deliverable[] = [
     purpose: 'サービス品質の合意と設計方針の基準化',
     requirements: '稼働率/RPO・RTO/レスポンス/同時接続/監視/バックアップ/法規制',
     priority: 'Must',
-    category: '非機能',
+    category: '要件定義', // ← フェーズで統一
     type: 'application',
     templates: [
       {
@@ -106,7 +107,7 @@ export const deliverables: Deliverable[] = [
     purpose: '非機能要件に適合する方式決定',
     requirements: '構成図/ネットワーク/冗長化/監視/外部IF一覧',
     priority: 'Must',
-    category: 'インフラ設計',
+    category: '基本設計', // ← フェーズで統一
     type: 'infrastructure',
     templates: [
       {
@@ -125,7 +126,7 @@ export const deliverables: Deliverable[] = [
     purpose: '機能設計の基礎となるUI仕様の確定',
     requirements: '画面一覧/遷移図/項目仕様/入力チェック',
     priority: 'Must',
-    category: 'UI/UX設計',
+    category: '基本設計', // ← フェーズで統一
     type: 'application',
     templates: [
       {
@@ -143,8 +144,8 @@ export const deliverables: Deliverable[] = [
     description: '帳票レイアウト・項目仕様・出力条件の設計',
     purpose: '帳票要件の実装仕様化',
     requirements: '帳票一覧/レイアウト/項目仕様/出力条件',
-    priority: 'Should',
-    category: 'UI/UX設計',
+    priority: 'Could', // ← 付け直し：Should → Could（案件によっては不要）
+    category: '基本設計', // ← フェーズで統一
     type: 'application',
     templates: [
       {
@@ -163,7 +164,7 @@ export const deliverables: Deliverable[] = [
     purpose: '連携・バッチ・画面I/Oの統一仕様',
     requirements: 'データ項目/型/制約/入出力条件',
     priority: 'Must',
-    category: 'インターフェース設計',
+    category: '基本設計', // ← フェーズで統一
     type: 'application',
     templates: [
       {
@@ -182,7 +183,7 @@ export const deliverables: Deliverable[] = [
     purpose: 'データ整合性と拡張性の担保',
     requirements: 'ER図/テーブル定義/キー/制約',
     priority: 'Must',
-    category: 'データ設計',
+    category: '基本設計', // ← フェーズで統一
     type: 'application',
     templates: [
       {
@@ -195,32 +196,13 @@ export const deliverables: Deliverable[] = [
     position: { x: 420, y: 460 }
   },
   {
-    id: 'bd-06',
-    title: 'データボリューム見積もり表',
-    description: 'テーブルごとのデータ量/増分量の見積もり',
-    purpose: '性能・容量設計の前提値の確定',
-    requirements: '初期件数/日次増分/保持期間/アーカイブ方針',
-    priority: 'Should',
-    category: 'データ設計',
-    type: 'application',
-    templates: [
-      {
-        id: 'tpl-bd-06', name: 'データボリューム見積（表）', format: 'MD', hasSample: true,
-        content: { markdown: '# データボリューム見積', sections: ['初期件数', '日次増分', '保持期間', 'アーカイブ'] }
-      }
-    ],
-    isOptedIn: false,
-    dependencies: ['bd-05'],
-    position: { x: 640, y: 460 }
-  },
-  {
     id: 'bd-07',
     title: '非機能設計書',
     description: 'クラスタ/フェイルオーバー、性能試算、監視・バックアップ、セキュリティ、移行/DR設計',
     purpose: '非機能要件を満たす具体的な方式を定義',
     requirements: '可用性/性能/運用/セキュリティ/移行/DR',
     priority: 'Must',
-    category: '非機能',
+    category: '基本設計', // ← フェーズで統一
     type: 'infrastructure',
     templates: [
       {
@@ -234,15 +216,10 @@ export const deliverables: Deliverable[] = [
   },
 ]
 
-// ⬇️ フィルタ用カテゴリ（Docsに合わせて整理）
+// ⬇️ フィルタ用カテゴリ（フェーズに限定）
 export const categories = [
   '要件定義',
-  '業務分析',
-  'UI/UX設計',
-  'インターフェース設計',
-  'データ設計',
-  'インフラ設計',
-  '非機能',
+  '基本設計',
 ]
 
 // 既存のままでOK

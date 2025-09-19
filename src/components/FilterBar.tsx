@@ -1,12 +1,12 @@
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
 } from '@/components/ui/select';
 import { PriorityType, DeliverableType } from '@/types/deliverable';
 import { Search, Filter, X } from 'lucide-react';
@@ -37,10 +37,10 @@ export const FilterBar = ({
   showOptedInOnly,
   onOptedInToggle
 }: FilterBarProps) => {
-  const hasActiveFilters = 
-    searchTerm || 
-    selectedPriority !== 'all' || 
-    selectedCategory !== 'all' || 
+  const hasActiveFilters =
+    searchTerm ||
+    selectedPriority !== 'all' ||
+    selectedCategory !== 'all' ||
     selectedType !== 'all' ||
     showOptedInOnly;
 
@@ -64,7 +64,7 @@ export const FilterBar = ({
             className="pl-10"
           />
         </div>
-        
+
         <div className="flex gap-2">
           <Select value={selectedPriority} onValueChange={onPriorityChange}>
             <SelectTrigger className="w-32">

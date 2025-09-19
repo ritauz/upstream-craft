@@ -63,7 +63,7 @@ ${deliverable.requirements}` : ''}
 ---
 このテンプレートを使用して${deliverable.title}を作成してください。
 `;
-    
+
     const blob = new Blob([content], { type: 'text/markdown' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -99,8 +99,8 @@ ${deliverable.requirements}` : ''}
             <DialogTitle className="text-xl font-bold">
               {deliverable.title}
             </DialogTitle>
-            <Badge 
-              variant="secondary" 
+            <Badge
+              variant="secondary"
               className={getPriorityColor(deliverable.priority)}
             >
               {deliverable.priority}
@@ -157,7 +157,7 @@ ${deliverable.requirements}` : ''}
             </h3>
             <div className="space-y-3">
               {deliverable.templates.map((template) => (
-                <div 
+                <div
                   key={template.id}
                   className="flex items-center justify-between p-3 bg-muted/50 rounded-lg border"
                 >
@@ -208,7 +208,7 @@ ${deliverable.requirements}` : ''}
               </div>
               <div className="space-y-2">
                 {deliverable.dependencies.map((depId, index) => (
-                  <div 
+                  <div
                     key={depId}
                     className="flex items-center gap-2 p-2 bg-muted/30 rounded border"
                   >

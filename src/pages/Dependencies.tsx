@@ -27,14 +27,14 @@ const Dependencies = () => {
             </Button>
           </div>
           <h1 className="text-4xl font-bold text-foreground mb-2">
-            成果物依存関係
+            成果物依存関係図
           </h1>
           <p className="text-muted-foreground">
             成果物間の依存関係を可視化し、プロジェクト進行の流れを把握できます
           </p>
         </div>
 
-        <DeliverableDiagram
+        <DeliverableDiagram 
           deliverables={deliverables}
           onDeliverableClick={setSelectedDeliverable}
         />

@@ -56,62 +56,72 @@ export const buildDocTree = (items: DocItem[]): DocNode[] => {
 
   const roots: Record<string, DocNode> = {}
 
-  const getOrCreateChildNode = (parent: DocNode, name: string, title?: string) => {
+  const getOrCreateChildNode = (parent: DocNode, name: string, title?: string, order = 50) => {
     if (parent.type === 'node') {
-      const node = parent.children.find(n => n.type === 'node' && (n as any).name === name) as DocNode | undefined
-      if (node) return node
+      const existing = parent.children.find(
+        n => n.type === 'node' && (n as any).name === name
+      ) as DocNode | undefined
+      if (existing) return existing
     }
-    const created = ensureNode(name, title)
-    if (parent.type === 'node') {
-      parent.children.push(created)
-    }
+    const created = ensureNode(name, title, order)
+    if (parent.type === 'node') parent.children.push(created)
     return created
   }
 
-  const getRoot = (name: string, title?: string) => {
-    if (!roots[name]) roots[name] = ensureNode(name, title)
+  const getRoot = (name: string, title?: string, order = 50) => {
+    if (!roots[name]) roots[name] = ensureNode(name, title, order)
     return roots[name]
   }
 
   items.forEach(item => {
     const segs = item.slug.split('/')
+
     if (segs.length === 1) {
-      const r = getRoot('__root__', 'Docs')
-      if (r.type === 'node') {
-        r.children.push({ type: 'item', item })
+      // /intro.mdx のようなルート直下
+      const r = getRoot('__root__', 'Docs', 0)
+      if (r.type === 'node') r.children.push({ type: 'item', item })
+      return
+    }
+
+    let parent = getRoot(segs[0])
+    for (let i = 1; i < segs.length - 1; i++) {
+      parent = getOrCreateChildNode(parent, segs[i])
+    }
+
+    // フォルダ直下の index.mdx
+    if (segs[segs.length - 1] === 'index') {
+      if (parent.type === 'node') {
+        parent.title = item.title
+        parent.order = item.order
+        parent.slug = item.slug.replace(/\/index$/, '') // ← ノード自身のリンク先
       }
       return
     }
-    let parent = getRoot(segs[0], humanize(segs[0]))
-    for (let i = 1; i < segs.length - 1; i++) {
-      parent = getOrCreateChildNode(parent, segs[i], humanize(segs[i]))
-    }
+
     if (parent.type === 'node') {
       parent.children.push({ type: 'item', item })
     }
   })
 
+  const getOrder = (n: DocNode) =>
+    n.type === 'item' ? n.item.order : (n as any).order ?? 50
+  const getTitle = (n: DocNode) =>
+    n.type === 'item' ? n.item.title : (n as any).title
+
   const sortNode = (n: DocNode) => {
     if (n.type === 'node') {
       n.children.sort((a, b) => {
-        const ao = a.type === 'item' ? a.item.order : (a as any).order ?? 50
-        const bo = b.type === 'item' ? b.item.order : (b as any).order ?? 50
+        const ao = getOrder(a)
+        const bo = getOrder(b)
         if (ao !== bo) return ao - bo
-        const at = a.type === 'item' ? a.item.title : (a as any).title
-        const bt = b.type === 'item' ? b.item.title : (b as any).title
-        return String(at).localeCompare(String(bt), 'ja')
+        return String(getTitle(a)).localeCompare(String(getTitle(b)), 'ja')
       })
-
       n.children.forEach(ch => ch.type === 'node' && sortNode(ch))
     }
   }
 
   const tree = Object.values(roots)
   tree.forEach(sortNode)
-  tree.sort((a, b) => {
-    if ((a as any).name === '__root__') return -1
-    if ((b as any).name === '__root__') return 1
-    return (a as any).title.localeCompare((b as any).title, 'ja')
-  })
+  tree.sort((a, b) => getOrder(a) - getOrder(b))
   return tree
 }

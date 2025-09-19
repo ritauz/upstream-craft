@@ -1,99 +1,131 @@
 import { Deliverable, RiskAssessment, DeliverableRisk } from '@/types/deliverable';
 
+type Phase = '要件定義' | '基本設計';
+
 /**
- * 選択された成果物に基づいてリスク評価を行う
+ * 選択された成果物に基づいてリスク評価を行う（phase を考慮）
+ * - 判定の中心は priority と dependencies
+ * - category には '要件定義' | '基本設計' が入る前提
  */
 export const assessDeliverableSelectionRisk = (
   allDeliverables: Deliverable[],
-  selectedDeliverables: Deliverable[]
+  selectedDeliverables: Deliverable[],
+  category: Phase
 ): RiskAssessment => {
   const risks: DeliverableRisk[] = [];
   const recommendations: string[] = [];
 
-  // 必須成果物のチェック
-  const mustDeliverables = allDeliverables.filter(d => d.priority === 'Must');
-  const selectedMust = selectedDeliverables.filter(d => d.priority === 'Must');
-  
-  if (selectedMust.length < mustDeliverables.length) {
-    const missingMust = mustDeliverables.filter(md => 
-      !selectedDeliverables.find(sd => sd.id === md.id)
-    );
-    
+  const allById = new Map(allDeliverables.map(d => [d.id, d]));
+  const selectedIds = new Set(selectedDeliverables.map(d => d.id));
+  const inPhase = (d: Deliverable) => d.category === category;
+
+  // 1) フェーズ内の Must の充足チェック
+  const mustInPhase = allDeliverables.filter(d => inPhase(d) && d.priority === 'Must');
+  const missingMust = mustInPhase.filter(d => !selectedIds.has(d.id));
+
+  if (missingMust.length > 0) {
     risks.push({
-      id: 'missing-must-deliverables',
+      id: 'missing-must-in-phase',
       level: 'high',
-      description: '必須成果物が不足しています',
-      impact: `${missingMust.map(d => d.title).join('、')} が含まれていないため、プロジェクトの基盤となる重要な情報が不足し、後工程でのリスクが大幅に増加します。`,
-      mitigation: '必須成果物をすべて選択することを強く推奨します。'
+      description: `このフェーズ（${category}）の必須成果物が不足しています`,
+      impact: `${missingMust.map(d => d.title).join('、')} が未選択のため、後続の整合性・判断材料が欠落します。`,
+      mitigation: `このフェーズ（${category}）の Must をすべて選択してください。`
     });
-    
-    recommendations.push('すべての必須成果物を選択してください');
+    recommendations.push(`このフェーズの Must（${missingMust.map(d => d.title).join('、')}）を選択してください`);
   }
 
-  // 依存関係のチェック
-  const dependencyIssues = checkDependencies(selectedDeliverables);
-  if (dependencyIssues.length > 0) {
+  // 2) 選択セット内の依存関係充足チェック（未選択の依存）
+  const dependencyGaps: string[] = [];
+  selectedDeliverables.forEach(d => {
+    (d.dependencies ?? []).forEach(depId => {
+      if (!selectedIds.has(depId)) {
+        const dep = allById.get(depId);
+        const depLabel = dep ? dep.title : depId;
+        dependencyGaps.push(`${d.title} が依存する ${depLabel}`);
+      }
+    });
+  });
+
+  if (dependencyGaps.length > 0) {
     risks.push({
-      id: 'dependency-violations',
+      id: 'dependency-missing',
       level: 'high',
-      description: '依存関係に問題があります',
-      impact: `${dependencyIssues.join('、')} の依存関係が満たされていないため、成果物の品質や整合性に問題が生じる可能性があります。`,
-      mitigation: '依存する成果物を追加で選択するか、選択を見直してください。'
+      description: '依存関係の未充足があります',
+      impact: `${dependencyGaps.join('、')} が未選択のため、成果物の整合性が崩れます。`,
+      mitigation: '不足している依存成果物を選択するか、依存元の選択を見直してください。'
     });
-    
-    recommendations.push('依存関係を確認し、必要な成果物を追加選択してください');
+    recommendations.push('依存関係を満たすよう不足成果物を選択してください');
   }
 
-  // アプリケーション vs インフラのバランスチェック
-  const appDeliverables = selectedDeliverables.filter(d => d.type === 'application');
-  const infraDeliverables = selectedDeliverables.filter(d => d.type === 'infrastructure');
-  
-  if (appDeliverables.length > 0 && infraDeliverables.length === 0) {
+  // 3) フェーズ不整合の依存（下流フェーズへ依存していないか）
+  //   例：要件定義フェーズの成果物が、基本設計フェーズの成果物に依存している → 順序の破綻
+  const phaseOrder: Record<Phase, number> = { '要件定義': 1, '基本設計': 2 };
+  const crossPhaseIssues: string[] = [];
+
+  selectedDeliverables.forEach(d => {
+    const deps = d.dependencies ?? [];
+    deps.forEach(depId => {
+      const dep = allById.get(depId);
+      if (!dep) return;
+      // 下流（番号が大きい）への依存はリスク
+      if (dep.category && d.category && phaseOrder[d.category as Phase] < phaseOrder[dep.category as Phase]) {
+        crossPhaseIssues.push(`${d.title}（${d.category}）→ ${dep.title}（${dep.category}）`);
+      }
+    });
+  });
+
+  if (crossPhaseIssues.length > 0) {
     risks.push({
-      id: 'missing-infrastructure',
+      id: 'cross-phase-dependency',
       level: 'medium',
-      description: 'インフラ関連の成果物が不足しています',
-      impact: 'システム運用時のトラブルや性能問題が発生しやすくなる可能性があります。',
-      mitigation: 'システム構成図や運用手順書などのインフラ成果物を検討してください。'
+      description: 'フェーズ順序と矛盾する依存関係があります',
+      impact: `${crossPhaseIssues.join('、')} への依存は工程順序の破綻を招き、手戻りリスクが増大します。`,
+      mitigation: '依存先の定義／順序を見直すか、同フェーズ内で満たせる代替成果物を検討してください。'
     });
-    
-    recommendations.push('インフラ関連の成果物も検討してください');
+    recommendations.push('フェーズ順序と依存の整合性を確認してください');
   }
 
-  // テスト成果物のチェック
-  const hasTestDeliverables = selectedDeliverables.some(d => d.category === 'テスト');
-  const hasApplicationDeliverables = appDeliverables.length > 0;
-  
-  if (hasApplicationDeliverables && !hasTestDeliverables) {
+  // 4) Orphan 選択（Must なしで Should/Could を先行選択）
+  //   ロジック：このフェーズで Must を一つも選ばず、Should/Could だけ選んでいる
+  const hasMustSelectedInPhase = selectedDeliverables.some(d => inPhase(d) && d.priority === 'Must');
+  const hasNonMustSelectedInPhase = selectedDeliverables.some(d => inPhase(d) && d.priority !== 'Must');
+
+  if (!hasMustSelectedInPhase && hasNonMustSelectedInPhase) {
     risks.push({
-      id: 'missing-test-deliverables',
+      id: 'orphan-nonmust',
       level: 'medium',
-      description: 'テスト関連の成果物が含まれていません',
-      impact: 'システムの品質保証が不十分になり、本番環境での障害リスクが高まります。',
-      mitigation: 'テスト仕様書の追加を検討してください。'
+      description: 'Must を満たさずに Should/Could を先行選択しています',
+      impact: '根拠となる基礎情報が未整備のまま設計・検討が進み、後戻りや差戻しが発生しやすくなります。',
+      mitigation: 'まず本フェーズの Must を優先選択し、次に Should/Could を追加してください。'
     });
-    
-    recommendations.push('品質保証のためテスト仕様書の選択を検討してください');
+    recommendations.push('本フェーズの Must を優先して選択してください');
   }
 
-  // セキュリティ成果物のチェック
-  const hasSecurityDeliverables = selectedDeliverables.some(d => d.category === 'セキュリティ');
-  const totalSelectedCount = selectedDeliverables.length;
-  
-  if (totalSelectedCount > 3 && !hasSecurityDeliverables) {
+  // 5) 依存未充足の Non-Must を局所判定（説明の一貫性を強化）
+  //   Non-Must（Should/Could）が未充足依存を持つ場合、個別の中リスクを付与
+  const unmetNonMust: string[] = [];
+  selectedDeliverables
+    .filter(d => d.priority !== 'Must')
+    .forEach(d => {
+      const missing = (d.dependencies ?? []).filter(depId => !selectedIds.has(depId));
+      if (missing.length > 0) {
+        unmetNonMust.push(`${d.title}（${d.priority}）→ ${missing.map(id => allById.get(id)?.title ?? id).join('、')}`);
+      }
+    });
+
+  if (unmetNonMust.length > 0) {
     risks.push({
-      id: 'missing-security',
-      level: 'low',
-      description: 'セキュリティ関連の成果物が含まれていません',
-      impact: 'セキュリティ要件の検討が不十分になる可能性があります。',
-      mitigation: 'システムの重要度に応じてセキュリティ設計書を検討してください。'
+      id: 'nonmust-with-unmet-deps',
+      level: 'medium',
+      description: 'Should/Could の依存未充足があります',
+      impact: `${unmetNonMust.join('、')} の依存が満たされていないため、当該成果物は有効に機能しません。`,
+      mitigation: '該当成果物の依存を満たすか、依存元が整うまで選択を保留してください。'
     });
-    
-    recommendations.push('システムの重要度に応じてセキュリティ成果物も検討してください');
+    recommendations.push('Should/Could の依存充足を優先してください');
   }
 
-  // 総合リスクレベルの決定
-  const overallRisk = determineOverallRisk(risks);
+  // 総合リスク（スコア方式：high=3, medium=2, low=1）
+  const overallRisk = determineOverallRiskByScore(risks);
 
   return {
     overallRisk,
@@ -103,86 +135,78 @@ export const assessDeliverableSelectionRisk = (
 };
 
 /**
- * 依存関係の問題をチェック
+ * 総合リスクレベル（スコア集計）
  */
-const checkDependencies = (selectedDeliverables: Deliverable[]): string[] => {
-  const issues: string[] = [];
-  const selectedIds = new Set(selectedDeliverables.map(d => d.id));
-
-  selectedDeliverables.forEach(deliverable => {
-    if (deliverable.dependencies) {
-      deliverable.dependencies.forEach(depId => {
-        if (!selectedIds.has(depId)) {
-          const depTitle = selectedDeliverables.find(d => d.id === depId)?.title || depId;
-          issues.push(`${deliverable.title} が依存する ${depTitle}`);
-        }
-      });
-    }
-  });
-
-  return issues;
-};
-
-/**
- * 総合リスクレベルを決定
- */
-const determineOverallRisk = (risks: DeliverableRisk[]): 'low' | 'medium' | 'high' => {
+const determineOverallRiskByScore = (risks: DeliverableRisk[]): 'low' | 'medium' | 'high' => {
+  if (risks.length === 0) return 'low';
+  const score = risks.reduce((acc, r) => acc + (r.level === 'high' ? 3 : r.level === 'medium' ? 2 : 1), 0);
   if (risks.some(r => r.level === 'high')) return 'high';
-  if (risks.some(r => r.level === 'medium')) return 'medium';
-  return 'low';
+  return score >= 4 ? 'medium' : 'low'; // 小～中規模の中リスク累積を medium に寄せる
 };
 
 /**
- * 成果物の追加・削除時のリスク変化を評価
+ * 成果物の追加・削除時のリスク変化を評価（priority / dependencies に集中）
  */
 export const assessDeliverableChangeRisk = (
   deliverable: Deliverable,
   isAdding: boolean,
-  currentSelection: Deliverable[]
+  currentSelection: Deliverable[],
+  allDeliverables: Deliverable[],
+  category: Phase
 ): { risks: DeliverableRisk[], recommendations: string[] } => {
   const risks: DeliverableRisk[] = [];
   const recommendations: string[] = [];
+  const allById = new Map(allDeliverables.map(d => [d.id, d]));
+  const selectedIds = new Set(currentSelection.map(d => d.id));
 
   if (!isAdding) {
-    // 削除時のリスク評価
-    if (deliverable.priority === 'Must') {
+    // 削除時：Must の削除は高リスク
+    if (deliverable.priority === 'Must' && deliverable.category === category) {
       risks.push({
         id: 'removing-must',
         level: 'high',
-        description: '必須成果物を削除しようとしています',
-        impact: 'プロジェクトの基盤となる重要な情報が欠落し、後工程で大きな問題が発生する可能性があります。',
-        mitigation: '必須成果物の削除は推奨されません。'
+        description: `このフェーズ（${category}）の必須成果物を削除しようとしています`,
+        impact: '基礎情報が欠落し、後工程の判断・整合が困難になります。',
+        mitigation: 'Must の削除は避け、代替や移管の方針を明確化してください。'
       });
-      
-      recommendations.push('必須成果物は削除しないことを強く推奨します');
+      recommendations.push('Must は削除しないことを強く推奨します');
     }
 
-    // この成果物に依存している他の成果物をチェック
-    const dependentDeliverables = currentSelection.filter(d => 
-      d.dependencies?.includes(deliverable.id)
-    );
-    
-    if (dependentDeliverables.length > 0) {
+    // 依存逆引き：この成果物に依存している選択済みの他成果物
+    const dependents = currentSelection.filter(d => (d.dependencies ?? []).includes(deliverable.id));
+    if (dependents.length > 0) {
       risks.push({
         id: 'breaking-dependencies',
         level: 'medium',
-        description: '他の成果物が依存しています',
-        impact: `${dependentDeliverables.map(d => d.title).join('、')} が ${deliverable.title} に依存しているため、整合性の問題が発生する可能性があります。`,
-        mitigation: '依存している成果物も併せて削除するか、依存関係を再検討してください。'
+        description: '他の選択済み成果物が依存しています',
+        impact: `${dependents.map(d => d.title).join('、')} が ${deliverable.title} に依存しているため、整合性が崩れます。`,
+        mitigation: '依存先を代替で補うか、依存元も合わせて見直してください。'
       });
-      
-      recommendations.push('依存している他の成果物への影響を確認してください');
+      recommendations.push('依存関係の波及影響を確認してください');
     }
   } else {
-    // 追加時のリスク評価（主に推奨事項）
-    if (deliverable.dependencies && deliverable.dependencies.length > 0) {
-      const missingDeps = deliverable.dependencies.filter(depId => 
-        !currentSelection.find(d => d.id === depId)
-      );
-      
-      if (missingDeps.length > 0) {
-        recommendations.push(`${deliverable.title} が依存する成果物（${missingDeps.join('、')}）も選択することを検討してください`);
-      }
+    // 追加時：未充足依存の注意喚起（推奨）
+    const missingDeps = (deliverable.dependencies ?? []).filter(depId => !selectedIds.has(depId));
+    if (missingDeps.length > 0) {
+      const names = missingDeps.map(id => allById.get(id)?.title ?? id).join('、');
+      recommendations.push(`${deliverable.title} の依存（${names}）も併せて選択してください`);
+    }
+
+    // フェーズ逆行依存（選択対象が下流へ依存）を軽リスクで示唆
+    const phaseOrder: Record<Phase, number> = { '要件定義': 1, '基本設計': 2 };
+    const crossPhase = (deliverable.dependencies ?? [])
+      .map(id => allById.get(id))
+      .filter((dep): dep is Deliverable => !!dep && dep.category && deliverable.category && phaseOrder[deliverable.category as Phase] < phaseOrder[dep.category as Phase]);
+
+    if (crossPhase.length > 0) {
+      risks.push({
+        id: 'add-cross-phase-dependency',
+        level: 'medium',
+        description: 'フェーズ順序と矛盾する依存を含む成果物を追加しています',
+        impact: `${deliverable.title} → ${crossPhase.map(d => d.title).join('、')} への依存は工程順序の破綻を招くおそれがあります。`,
+        mitigation: '順序の見直し、または同フェーズで満たせる代替成果物の検討をしてください。'
+      });
+      recommendations.push('フェーズ順序と依存の整合を確認してください');
     }
   }
 
