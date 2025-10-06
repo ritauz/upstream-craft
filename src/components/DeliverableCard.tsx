@@ -3,9 +3,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Deliverable, PriorityType } from '@/types/deliverable';
-import { Download, FileText, Eye, CheckSquare } from 'lucide-react';
+import { Eye, CheckSquare } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { downloadMarkdown } from '@/utils/fileDownload';
 
 interface DeliverableCardProps {
   deliverable: Deliverable;
@@ -89,29 +88,6 @@ export const DeliverableCard = ({
             <p className="text-xs text-muted-foreground line-clamp-2">
               {deliverable.purpose}
             </p>
-          </div>
-        )}
-
-        {deliverable.templates.length > 0 && (
-          <div className="mb-4">
-            <h4 className="text-xs font-medium text-card-foreground mb-2">テンプレート</h4>
-            <div className="flex flex-wrap gap-1">
-              {deliverable.templates.map((template) => (
-                <Button
-                  key={template.id}
-                  variant="outline"
-                  size="sm"
-                  className="h-7 text-xs"
-                  onClick={() => downloadMarkdown(template.name, template.content.markdown)}
-                >
-                  <Download className="h-3 w-3 mr-1" />
-                  {template.format}
-                  {template.hasSample && (
-                    <span className="ml-1 text-primary">+サンプル</span>
-                  )}
-                </Button>
-              ))}
-            </div>
           </div>
         )}
 

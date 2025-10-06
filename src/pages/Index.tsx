@@ -1,8 +1,8 @@
 import { useState, useMemo } from 'react';
 
 import { DeliverableCard } from '@/components/DeliverableCard';
+import { DeliverableModal } from '@/components/DeliverableModal';
 import { StatsCard } from '@/components/StatsCard';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Input } from '@/components/ui/input';
 import { useNavigate } from 'react-router-dom';
 import { assessDeliverableSelectionRisk } from '@/utils/riskAssessment';
-import { downloadMarkdown } from '@/utils/fileDownload';
+
 type Phase = '要件定義' | '基本設計';
 
 const Index = () => {
@@ -285,78 +285,14 @@ const Index = () => {
         </div>
       </main>
 
-      {/* Detail Dialog */}
-      <Dialog open={!!selectedDeliverable} onOpenChange={() => setSelectedDeliverable(null)}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-          {selectedDeliverable && <>
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                {selectedDeliverable.title}
-                <Badge className={`bg-${selectedDeliverable.priority === 'Must' ? 'must' : selectedDeliverable.priority === 'Should' ? 'should' : 'could'}`}>
-                  {selectedDeliverable.priority}
-                </Badge>
-              </DialogTitle>
-            </DialogHeader>
-
-            <div className="space-y-4">
-              <div>
-                <h4 className="font-medium mb-2">説明</h4>
-                <p className="text-sm text-muted-foreground">
-                  {selectedDeliverable.description}
-                </p>
-              </div>
-
-              {selectedDeliverable.purpose && <div>
-                <h4 className="font-medium mb-2">目的・意義</h4>
-                <p className="text-sm text-muted-foreground">
-                  {selectedDeliverable.purpose}
-                </p>
-              </div>}
-
-              {selectedDeliverable.requirements && <div>
-                <h4 className="font-medium mb-2">存在意義</h4>
-                <p className="text-sm text-muted-foreground">
-                  {selectedDeliverable.requirements}
-                </p>
-              </div>}
-
-              {selectedDeliverable.templates.length > 0 && <div>
-                <h4 className="font-medium mb-2">利用可能なテンプレート</h4>
-                <div className="space-y-2">
-                  {selectedDeliverable.templates.map(template => <div key={template.id} className="flex items-center justify-between p-3 border rounded-lg">
-                    <div>
-                      <p className="font-medium text-sm">{template.name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        形式: {template.format}
-                        {template.hasSample && ' | サンプル付き'}
-                      </p>
-                    </div>
-                    <Button size="sm" variant="outline" onClick={() =>
-                      downloadMarkdown(template.name, template.content.markdown)
-                    }>
-                      <Download className="h-4 w-4 mr-1" />
-                      ダウンロード
-                    </Button>
-                  </div>)}
-                </div>
-              </div>}
-
-              <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
-                <span className="text-sm font-medium">この成果物を選択</span>
-                <Button variant={selectedDeliverable.isOptedIn ? "default" : "outline"} size="sm" onClick={() => {
-                  handleToggleOptIn(selectedDeliverable.id, !selectedDeliverable.isOptedIn);
-                  setSelectedDeliverable(prev => prev ? {
-                    ...prev,
-                    isOptedIn: !prev.isOptedIn
-                  } : null);
-                }}>
-                  {selectedDeliverable.isOptedIn ? '選択中' : '選択する'}
-                </Button>
-              </div>
-            </div>
-          </>}
-        </DialogContent>
-      </Dialog>
+      {/* Detail Modal */}
+      {selectedDeliverable && (
+        <DeliverableModal
+          deliverable={selectedDeliverable}
+          onClose={() => setSelectedDeliverable(null)}
+          allDeliverables={deliverables}
+        />
+      )}
     </div>);
 };
 export default Index;
