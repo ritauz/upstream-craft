@@ -3,9 +3,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { Download, FileText, Target, CheckSquare, Settings } from 'lucide-react';
+import { FileText, Target, CheckSquare, Settings, Copy, Eye } from 'lucide-react';
 import { TemplateCustomizationModal } from './TemplateCustomizationModal';
 import { useState } from 'react';
+import { useToast } from '@/hooks/use-toast';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface DeliverableModalProps {
   deliverable: Deliverable;
@@ -34,20 +36,22 @@ const getFormatIcon = (format: string) => {
 
 export const DeliverableModal = ({ deliverable, onClose, allDeliverables }: DeliverableModalProps) => {
   const [customizationTemplate, setCustomizationTemplate] = useState<Template | null>(null);
+  const [viewTemplate, setViewTemplate] = useState<{ name: string; content: string } | null>(null);
+  const { toast } = useToast();
 
   const handleTemplateAction = (template: Template) => {
     if (template.sections && template.sections.length > 0) {
       // カスタマイズ可能なテンプレートの場合、カスタマイズモーダルを開く
       setCustomizationTemplate(template);
     } else {
-      // 直接ダウンロード
-      handleDownload('', template.name);
+      // テンプレート表示モーダルを開く
+      const content = generateTemplateContent(template.name);
+      setViewTemplate({ name: template.name, content });
     }
   };
 
-  const handleDownload = (templateUrl: string, templateName: string) => {
-    // Markdownファイルの実際のダウンロード処理
-    const content = `# ${templateName}
+  const generateTemplateContent = (templateName: string) => {
+    return `# ${templateName}
 
 成果物: ${deliverable.title}
 
@@ -63,28 +67,16 @@ ${deliverable.requirements}` : ''}
 ---
 このテンプレートを使用して${deliverable.title}を作成してください。
 `;
-
-    const blob = new Blob([content], { type: 'text/markdown' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `${deliverable.title}_${templateName}.md`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
   };
 
-  const handleCustomizedDownload = (customizedContent: string) => {
-    const blob = new Blob([customizedContent], { type: 'text/markdown' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `${deliverable.title}_カスタマイズ済み.md`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+  const handleCopyTemplate = () => {
+    if (viewTemplate) {
+      navigator.clipboard.writeText(viewTemplate.content);
+      toast({
+        title: "コピーしました",
+        description: "テンプレートがクリップボードにコピーされました。",
+      });
+    }
   };
   const getDependencyTitle = (depId: string) => {
     const dep = allDeliverables.find(d => d.id === depId);
@@ -152,7 +144,7 @@ ${deliverable.requirements}` : ''}
           {/* テンプレート一覧 */}
           <div>
             <h3 className="flex items-center gap-2 font-semibold text-foreground mb-4">
-              <Download className="w-4 h-4" />
+              <FileText className="w-4 h-4" />
               利用可能なテンプレート
             </h3>
             <div className="space-y-3">
@@ -187,8 +179,8 @@ ${deliverable.requirements}` : ''}
                       </>
                     ) : (
                       <>
-                        <Download className="w-4 h-4" />
-                        ダウンロード
+                        <Eye className="w-4 h-4" />
+                        表示
                       </>
                     )}
                   </Button>
@@ -228,10 +220,36 @@ ${deliverable.requirements}` : ''}
       {customizationTemplate && (
         <TemplateCustomizationModal
           template={customizationTemplate}
+          deliverable={deliverable}
           isOpen={!!customizationTemplate}
           onClose={() => setCustomizationTemplate(null)}
-          onDownload={handleCustomizedDownload}
         />
+      )}
+
+      {/* Template View Modal */}
+      {viewTemplate && (
+        <Dialog open={!!viewTemplate} onOpenChange={() => setViewTemplate(null)}>
+          <DialogContent className="max-w-3xl max-h-[80vh]">
+            <DialogHeader>
+              <DialogTitle className="flex items-center justify-between">
+                <span>{viewTemplate.name}</span>
+                <Button
+                  size="sm"
+                  onClick={handleCopyTemplate}
+                  className="flex items-center gap-2"
+                >
+                  <Copy className="w-4 h-4" />
+                  コピー
+                </Button>
+              </DialogTitle>
+            </DialogHeader>
+            <ScrollArea className="h-[60vh] w-full rounded-md border p-4">
+              <pre className="text-sm whitespace-pre-wrap font-mono">
+                {viewTemplate.content}
+              </pre>
+            </ScrollArea>
+          </DialogContent>
+        </Dialog>
       )}
     </Dialog>
   );

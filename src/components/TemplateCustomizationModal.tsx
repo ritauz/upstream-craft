@@ -3,27 +3,32 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
-import { Template, TemplateSection, RiskAssessment } from '@/types/deliverable';
-import { Download, AlertTriangle, Info } from 'lucide-react';
+import { Template, TemplateSection, RiskAssessment, Deliverable } from '@/types/deliverable';
+import { Copy, AlertTriangle, Info, Eye } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { useToast } from '@/hooks/use-toast';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface TemplateCustomizationModalProps {
   template: Template;
+  deliverable: Deliverable;
   isOpen: boolean;
   onClose: () => void;
-  onDownload: (customizedContent: string) => void;
 }
 
 export const TemplateCustomizationModal: React.FC<TemplateCustomizationModalProps> = ({
   template,
+  deliverable,
   isOpen,
-  onClose,
-  onDownload
+  onClose
 }) => {
   const [sections, setSections] = useState<TemplateSection[]>(
     template.sections?.map(section => ({ ...section })) || []
   );
   const [riskAssessment, setRiskAssessment] = useState<RiskAssessment | null>(null);
+  const [generatedContent, setGeneratedContent] = useState<string>('');
+  const { toast } = useToast();
 
   const handleSectionToggle = (sectionId: string, isSelected: boolean) => {
     setSections(prev => prev.map(section => 
@@ -83,10 +88,12 @@ export const TemplateCustomizationModal: React.FC<TemplateCustomizationModalProp
 
   const generateCustomizedContent = () => {
     const selectedSections = sections.filter(s => s.isSelected);
-    const baseContent = template.content?.markdown || '';
     
     // 基本的なMarkdownコンテンツ生成
     let customizedContent = `# ${template.name}\n\n`;
+    customizedContent += `成果物: ${deliverable.title}\n\n`;
+    customizedContent += `## 概要\n${deliverable.description}\n\n`;
+    customizedContent += `## 目的\n${deliverable.purpose}\n\n`;
     
     selectedSections.forEach((section, index) => {
       customizedContent += `## ${index + 1}. ${section.name}\n\n`;
@@ -94,13 +101,24 @@ export const TemplateCustomizationModal: React.FC<TemplateCustomizationModalProp
       customizedContent += `${section.content}\n\n`;
     });
 
+    customizedContent += `\n---\nこのテンプレートを使用して${deliverable.title}を作成してください。\n`;
+
     return customizedContent;
   };
 
-  const handleDownload = () => {
+  const handleGenerate = () => {
     const content = generateCustomizedContent();
-    onDownload(content);
-    onClose();
+    setGeneratedContent(content);
+  };
+
+  const handleCopy = () => {
+    if (generatedContent) {
+      navigator.clipboard.writeText(generatedContent);
+      toast({
+        title: "コピーしました",
+        description: "カスタマイズされたテンプレートがクリップボードにコピーされました。",
+      });
+    }
   };
 
   const getRiskColor = (level: 'low' | 'medium' | 'high') => {
@@ -113,14 +131,22 @@ export const TemplateCustomizationModal: React.FC<TemplateCustomizationModalProp
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-5xl max-h-[90vh]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             テンプレートのカスタマイズ - {template.name}
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-6">
+        <Tabs defaultValue="customize" className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="customize">セクション選択</TabsTrigger>
+            <TabsTrigger value="preview" disabled={!generatedContent}>
+              プレビュー
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="customize" className="space-y-6 max-h-[60vh] overflow-y-auto">
           {/* セクション選択 */}
           <div>
             <h3 className="text-lg font-medium mb-4">含めるセクションを選択してください</h3>
@@ -205,19 +231,39 @@ export const TemplateCustomizationModal: React.FC<TemplateCustomizationModalProp
               )}
             </div>
           )}
-        </div>
+          </TabsContent>
+
+          <TabsContent value="preview" className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-medium">生成されたテンプレート</h3>
+              <Button
+                size="sm"
+                onClick={handleCopy}
+                className="flex items-center gap-2"
+              >
+                <Copy className="w-4 h-4" />
+                コピー
+              </Button>
+            </div>
+            <ScrollArea className="h-[50vh] w-full rounded-md border p-4">
+              <pre className="text-sm whitespace-pre-wrap font-mono">
+                {generatedContent}
+              </pre>
+            </ScrollArea>
+          </TabsContent>
+        </Tabs>
 
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>
-            キャンセル
+            閉じる
           </Button>
           <Button 
-            onClick={handleDownload}
+            onClick={handleGenerate}
             className="flex items-center gap-2"
             disabled={sections.filter(s => s.isSelected).length === 0}
           >
-            <Download className="w-4 h-4" />
-            ダウンロード
+            <Eye className="w-4 h-4" />
+            プレビュー生成
           </Button>
         </DialogFooter>
       </DialogContent>
