@@ -1,5 +1,5 @@
 import { Deliverable, Template } from '@/domain/entities/deliverable';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/presentation/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/presentation/components/ui/dialog';
 import { Badge } from '@/presentation/components/ui/badge';
 import { Button } from '@/presentation/components/ui/button';
 import { Separator } from '@/presentation/components/ui/separator';
@@ -98,9 +98,11 @@ ${deliverable.requirements}` : ''}
               {deliverable.priority}
             </Badge>
           </div>
-          <Badge variant="outline" className="w-fit">
-            {deliverable.category}
-          </Badge>
+          <DialogDescription asChild>
+            <Badge variant="outline" className="w-fit">
+              {deliverable.category}
+            </Badge>
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6">
@@ -242,6 +244,9 @@ ${deliverable.requirements}` : ''}
                   コピー
                 </Button>
               </DialogTitle>
+              <DialogDescription>
+                テンプレートの内容を確認し、コピーボタンでクリップボードにコピーできます。
+              </DialogDescription>
             </DialogHeader>
             <ScrollArea className="h-[60vh] w-full rounded-md border p-4">
               <pre className="text-sm whitespace-pre-wrap font-mono">

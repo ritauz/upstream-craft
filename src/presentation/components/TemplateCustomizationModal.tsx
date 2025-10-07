@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/presentation/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/presentation/components/ui/dialog';
 import { Button } from '@/presentation/components/ui/button';
 import { Checkbox } from '@/presentation/components/ui/checkbox';
 import { Badge } from '@/presentation/components/ui/badge';
@@ -136,6 +136,9 @@ export const TemplateCustomizationModal: React.FC<TemplateCustomizationModalProp
           <DialogTitle className="flex items-center gap-2">
             テンプレートのカスタマイズ - {template.name}
           </DialogTitle>
+          <DialogDescription>
+            必要なセクションを選択してテンプレートをカスタマイズできます。
+          </DialogDescription>
         </DialogHeader>
 
         <Tabs defaultValue="customize" className="w-full">
