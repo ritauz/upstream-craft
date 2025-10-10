@@ -127,7 +127,9 @@ const Index = () => {
   };
 
   const handleCloseModal = () => {
-    setSearchParams({});
+    const newParams = new URLSearchParams(searchParams);
+    newParams.delete('deliverable');
+    setSearchParams(newParams);
   };
 
   return (
