@@ -10,22 +10,29 @@ export interface Deliverable {
   optionalRequirements?: string;
   priority: PriorityType;
   category: string;
-  type: DeliverableType;
-  templates: Template[];
+  type: DeliverableType[];
+  templates: TemplateRef[];
   checklist?: ChecklistItem[];
+  isPhazeDlv: boolean;
   isOptedIn: boolean;
   dependencies?: string[];
   position?: { x: number; y: number };
   risks?: DeliverableRisk[];
 }
 
-export interface Template {
-  id: string;
-  name: string;
-  format: 'Excel' | 'MD' | 'Word' | 'PDF';
+export type TemplateFormat = 'MD' | 'MDX';
+
+export interface TemplateRef {
+  id: string;        // 例: 'tpl-req-01' （= ファイル名ベース）
+  name: string;      // 表示名
+  format: TemplateFormat;
   hasSample: boolean;
-  content?: TemplateContent;
-  sections?: TemplateSection[];
+  contentRef: {
+    provider: 'blob' | 'signed-url';
+    key: string;           // マニフェスト上の key（内容ハッシュ付き）
+    version?: string;      // 任意（表示用）
+  };
+  updatedAt?: string;
 }
 
 export interface TemplateContent {

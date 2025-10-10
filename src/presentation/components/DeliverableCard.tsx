@@ -31,10 +31,17 @@ export const DeliverableCard = ({
   onViewDetails
 }: DeliverableCardProps) => {
   return (
-    <Card className={cn(
-      "transition-all duration-200 hover:shadow-elevated",
-      deliverable.isOptedIn ? "border-primary/20 bg-primary/5" : "border-border"
-    )}>
+    <Card
+      className={cn(
+        "transition-all duration-200 hover:shadow-elevated",
+        // ← isPhazeDlv を最優先にして常に bg-primary/25
+        deliverable.isPhazeDlv
+          ? "border-primary/20 bg-primary/25"
+          : deliverable.isOptedIn
+            ? "border-primary/20 bg-primary/5"
+            : "border-border"
+      )}
+    >
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1 min-w-0">
@@ -51,28 +58,57 @@ export const DeliverableCard = ({
               <Badge variant="outline" className="text-xs">
                 {deliverable.category}
               </Badge>
-              <Badge 
-                variant="outline" 
-                className={cn(
-                  "text-xs",
-                  deliverable.type === 'application' 
-                    ? "border-blue-200 text-blue-700 bg-blue-50" 
-                    : "border-green-200 text-green-700 bg-green-50"
-                )}
-              >
-                {deliverable.type === 'application' ? 'アプリ' : 'インフラ'}
-              </Badge>
+              {deliverable.type.includes('application') && (
+                <Badge
+                  variant="outline"
+                  className={cn(
+                    "text-xs",
+                    "border-blue-200 text-blue-700 bg-blue-50"
+                  )}
+                >
+                  アプリ
+                </Badge>
+              )}
+
+              {deliverable.type.includes('infrastructure') && (
+                <Badge
+                  variant="outline"
+                  className={cn(
+                    "text-xs",
+                    "border-green-200 text-green-700 bg-green-50"
+                  )}
+                >
+                  インフラ
+                </Badge>
+              )}
+
+
+              {
+                deliverable.isPhazeDlv && (
+                  <Badge
+                    variant='outline'
+                    className={cn(
+                      "text-xs",
+                      "border-blue-200 text-white bg-blue-700"
+                    )}
+                  >
+                    工程成果物
+                  </Badge>
+                )
+              }
             </div>
             <h3 className="font-semibold text-sm leading-snug text-card-foreground truncate">
               {deliverable.title}
             </h3>
           </div>
           <div className="flex items-center gap-2 shrink-0">
-            <Switch
-              checked={deliverable.isOptedIn}
-              onCheckedChange={(checked) => onToggleOptIn(deliverable.id, checked)}
-              className="data-[state=checked]:bg-primary"
-            />
+            {!deliverable.isPhazeDlv && (
+              <Switch
+                checked={deliverable.isOptedIn}
+                onCheckedChange={(checked) => onToggleOptIn(deliverable.id, checked)}
+                className="data-[state=checked]:bg-primary"
+              />
+            )}
           </div>
         </div>
       </CardHeader>

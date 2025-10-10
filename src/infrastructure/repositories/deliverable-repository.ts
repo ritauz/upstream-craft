@@ -1,118 +1,249 @@
 import { Deliverable } from '@/domain/entities/deliverable';
 import { IDeliverableRepository } from '@/domain/repositories/deliverable-repository.interface';
 
+// 注意:
+// - contentRef.key には "tpl-xxx-yy" の論理IDを入れる（manifest.json の entries[].id と一致）
+// - 本文はマニフェスト経由で URL 解決して fetch する運用
+
 const deliverables: Deliverable[] = [
   // === 要件定義（Requirements） ===
   {
-    id: 'req-01',
-    title: '業務要件一覧書',
-    description: '目的・KPI・アクター・トリガー・前提条件を整理した一覧',
-    purpose: '業務ゴールの可視化と合意形成',
+    id: 'req-00',
+    title: '要件定義書',
+    description: '要件定義で行った全ての工程は、この要件定義書に統合される。',
+    purpose: '顧客と開発側の合意の証。契約・品質・スコープを規定する。',
     requirements: '目的/KPI/アクター/トリガー/前提条件/アウトカム',
     priority: 'Must',
     category: '要件定義',
-    type: 'application',
+    type: ['application', 'infrastructure'],
     templates: [
       {
-        id: 'tpl-req-01', name: '業務要件一覧書（Markdown）', format: 'MD', hasSample: true,
-        content: { markdown: '# 業務要件一覧書', sections: ['目的', 'KPI', 'アクター', 'トリガー', '前提条件', 'アウトカム'] }
+        id: 'tpl-req-01',
+        name: '業務要件一覧書（Markdown）',
+        format: 'MD',
+        hasSample: true,
+        contentRef: { provider: 'blob', key: 'tpl-req-01', version: 'current' },
+        updatedAt: undefined
       }
     ],
+    isPhazeDlv: true,
+    isOptedIn: true,
+    dependencies: [],
+    position: { x: 120, y: 120 }
+  },
+  {
+    id: 'req-01',
+    title: '業務一覧',
+    description: 'システムに関連する業務を洗い出し、一覧にして、システム化対象か対象外か明記する。',
+    purpose: '•ステークホルダー間で「業務」に対する認識齟齬を防ぎ、合意形成を支援する• システム化対象業務と対象外業務を識別し、スコープを明確にする• トレーサビリティ（業務 → 機能 → 非機能要件、さらにはテスト仕様等）の出発点となる',
+    requirements: '目的/KPI/アクター/トリガー/前提条件/アウトカム',
+    priority: 'Must',
+    category: '要件定義',
+    type: ['application'],
+    templates: [
+      {
+        id: 'tpl-req-01',
+        name: '業務要件一覧書（Markdown）',
+        format: 'MD',
+        hasSample: true,
+        contentRef: { provider: 'blob', key: 'tpl-req-01', version: 'current' },
+        updatedAt: undefined
+      }
+    ],
+    isPhazeDlv: false,
     isOptedIn: true,
     dependencies: [],
     position: { x: 120, y: 120 }
   },
   {
     id: 'req-02',
-    title: '機能要件一覧書',
-    description: '機能ID・名称・説明・入出力・優先度を整理',
+    title: '制約条件一覧',
+    description: '業務やシステムを設計・運用する上で守らなければならない条件や制約を明確に整理する。',
     purpose: '機能スコープの明確化と優先順位付け',
     requirements: '機能ID/名称/説明/入出力/優先度',
     priority: 'Must',
     category: '要件定義',
-    type: 'application',
+    type: ['application'],
     templates: [
       {
-        id: 'tpl-req-02', name: '機能要件一覧書（Markdown）', format: 'MD', hasSample: true,
-        content: { markdown: '# 機能要件一覧書', sections: ['機能ID', '名称', '説明', '入出力', '優先度'] }
+        id: 'tpl-req-02',
+        name: '機能要件一覧書（Markdown）',
+        format: 'MD',
+        hasSample: true,
+        contentRef: { provider: 'blob', key: 'tpl-req-02', version: 'current' },
+        updatedAt: undefined
       }
     ],
+    isPhazeDlv: false,
     isOptedIn: true,
     dependencies: ['req-01'],
     position: { x: 320, y: 120 }
   },
   {
     id: 'req-03',
-    title: 'ユースケース・業務フロー図',
-    description: 'ユースケース図／業務フロー図（As-Is/To-Be）',
+    title: '業務フロー一覧',
+    description: '対象業務のAsIs業務フローとToBe業務フローを一覧に整理する。',
     purpose: '利用シナリオと業務手順の可視化',
     requirements: 'アクター/シナリオ/入出力/分岐/イベント',
     priority: 'Should',
     category: '要件定義',
-    type: 'application',
+    type: ['application'],
     templates: [
       {
-        id: 'tpl-req-03', name: 'ユースケース/フロー図の作成ガイド', format: 'MD', hasSample: true,
-        content: { markdown: '# 図作成ガイド', sections: ['ユースケース図', '業務フロー図'] }
+        id: 'tpl-req-03',
+        name: 'ユースケース/フロー図の作成ガイド',
+        format: 'MD',
+        hasSample: true,
+        contentRef: { provider: 'blob', key: 'tpl-req-03', version: 'current' },
+        updatedAt: undefined
       }
     ],
+    isPhazeDlv: false,
     isOptedIn: true,
     dependencies: ['req-01', 'req-02'],
     position: { x: 520, y: 120 }
   },
   {
     id: 'req-04',
-    title: '非機能要件定義書',
-    description: '可用性・性能・運用・セキュリティ等のレベル合意（IPAグレード準拠）',
-    purpose: 'サービス品質の合意と設計方針の基準化',
-    requirements: '稼働率/RPO・RTO/レスポンス/同時接続/監視/バックアップ/法規制',
-    priority: 'Must',
-    category: '要件定義',
-    type: 'application',
-    templates: [
-      {
-        id: 'tpl-req-04', name: '非機能要件定義書（Markdown）', format: 'MD', hasSample: true,
-        content: { markdown: '# 非機能要件定義書', sections: ['可用性', '性能', '運用', 'セキュリティ', '移行性', '制約'] }
-      }
-    ],
-    isOptedIn: true,
-    dependencies: ['req-01'],
-    position: { x: 720, y: 120 }
-  },
-  {
-    id: 'req-05',
-    title: '要件定義書',
-    description: '対象範囲・境界・除外事項と要件の最終合意書',
+    title: 'データ定義',
+    description: '業務で扱う情報（データ）を統一的に整理し、属性・型・意味・利用ルールを定義する。',
     purpose: 'プロジェクトの公式な合意文書',
     requirements: '範囲/境界/除外/機能/非機能/制約/リスク',
     priority: 'Must',
     category: '要件定義',
-    type: 'application',
+    type: ['application'],
     templates: [
       {
-        id: 'tpl-req-05', name: '要件定義書（Markdown）', format: 'MD', hasSample: true,
-        content: { markdown: '# 要件定義書', sections: ['範囲', '境界', '除外事項', '機能', '非機能', '制約', 'リスク'] }
+        id: 'tpl-req-05',
+        name: '要件定義書（Markdown）',
+        format: 'MD',
+        hasSample: true,
+        contentRef: { provider: 'blob', key: 'tpl-req-05', version: 'current' },
+        updatedAt: undefined
       }
     ],
+    isPhazeDlv: false,
     isOptedIn: true,
     dependencies: ['req-01', 'req-02', 'req-03', 'req-04'],
     position: { x: 920, y: 120 }
   },
   {
-    id: 'req-06',
-    title: 'インフラ要件定義書',
-    description: 'ネットワーク・サーバー・ストレージ等のインフラ要件',
+    id: 'req-05',
+    title: '業務ルール一覧',
+    description: 'ToBe業務フローで定義した手順・役割を具体的に運用可能にするために、「どのような条件・基準・判断ルールで業務が実行されるか」を明確化する。',
     purpose: 'システム基盤の要件明確化',
     requirements: 'ネットワーク/サーバー/ストレージ/セキュリティ/監視',
     priority: 'Must',
     category: '要件定義',
-    type: 'infrastructure',
+    type: ['application'],
     templates: [
       {
-        id: 'tpl-req-06', name: 'インフラ要件定義書（Markdown）', format: 'MD', hasSample: true,
-        content: { markdown: '# インフラ要件定義書', sections: ['ネットワーク', 'サーバー', 'ストレージ', 'セキュリティ', '監視'] }
+        id: 'tpl-req-06',
+        name: 'インフラ要件定義書（Markdown）',
+        format: 'MD',
+        hasSample: true,
+        contentRef: { provider: 'blob', key: 'tpl-req-06', version: 'current' },
+        updatedAt: undefined
       }
     ],
+    isPhazeDlv: false,
+    isOptedIn: true,
+    dependencies: ['req-04'],
+    position: { x: 1120, y: 120 }
+  },
+  {
+    id: 'req-06',
+    title: '用語集',
+    description: '業務・システム関連の用語を定義し、ステークホルダー間で共通理解を形成する。',
+    purpose: 'システム基盤の要件明確化',
+    requirements: 'ネットワーク/サーバー/ストレージ/セキュリティ/監視',
+    priority: 'Must',
+    category: '要件定義',
+    type: ['application'],
+    templates: [
+      {
+        id: 'tpl-req-06',
+        name: 'インフラ要件定義書（Markdown）',
+        format: 'MD',
+        hasSample: true,
+        contentRef: { provider: 'blob', key: 'tpl-req-06', version: 'current' },
+        updatedAt: undefined
+      }
+    ],
+    isPhazeDlv: false,
+    isOptedIn: true,
+    dependencies: ['req-04'],
+    position: { x: 1120, y: 120 }
+  },
+  {
+    id: 'req-07',
+    title: '機能要件一覧',
+    description: `業務要件を実現するために、システムが提供すべき機能を明確化し、業務とシステムの責任分界を定義するプロセス。
+「何をシステムで行うのか」「どのように業務を支援するのか」を明確にする。`,
+    purpose: 'システム基盤の要件明確化',
+    requirements: 'ネットワーク/サーバー/ストレージ/セキュリティ/監視',
+    priority: 'Must',
+    category: '要件定義',
+    type: ['application'],
+    templates: [
+      {
+        id: 'tpl-req-06',
+        name: 'インフラ要件定義書（Markdown）',
+        format: 'MD',
+        hasSample: true,
+        contentRef: { provider: 'blob', key: 'tpl-req-06', version: 'current' },
+        updatedAt: undefined
+      }
+    ],
+    isPhazeDlv: false,
+    isOptedIn: true,
+    dependencies: ['req-04'],
+    position: { x: 1120, y: 120 }
+  },
+  {
+    id: 'req-08',
+    title: '非機能要件定義',
+    description: 'システムが備えるべき性能・信頼性・可用性・セキュリティなど、機能以外の品質要求を明確化する。',
+    purpose: 'システム基盤の要件明確化',
+    requirements: 'ネットワーク/サーバー/ストレージ/セキュリティ/監視',
+    priority: 'Must',
+    category: '要件定義',
+    type: ['application', 'infrastructure'],
+    templates: [
+      {
+        id: 'tpl-req-06',
+        name: 'インフラ要件定義書（Markdown）',
+        format: 'MD',
+        hasSample: true,
+        contentRef: { provider: 'blob', key: 'tpl-req-06', version: 'current' },
+        updatedAt: undefined
+      }
+    ],
+    isPhazeDlv: false,
+    isOptedIn: true,
+    dependencies: ['req-04'],
+    position: { x: 1120, y: 120 }
+  },
+  {
+    id: 'req-09',
+    title: 'サービス構成図',
+    description: 'システムやサービスの構成要素（アクター、サーバ、アプリケーション、DB、ネットワーク、外部サービスなど）を視覚的に表現する。',
+    purpose: 'システム基盤の要件明確化',
+    requirements: 'ネットワーク/サーバー/ストレージ/セキュリティ/監視',
+    priority: 'Must',
+    category: '要件定義',
+    type: ['application', 'infrastructure'],
+    templates: [
+      {
+        id: 'tpl-req-06',
+        name: 'インフラ要件定義書（Markdown）',
+        format: 'MD',
+        hasSample: true,
+        contentRef: { provider: 'blob', key: 'tpl-req-06', version: 'current' },
+        updatedAt: undefined
+      }
+    ],
+    isPhazeDlv: false,
     isOptedIn: true,
     dependencies: ['req-04'],
     position: { x: 1120, y: 120 }
@@ -127,13 +258,18 @@ const deliverables: Deliverable[] = [
     requirements: '構成図/ネットワーク/冗長化/監視/外部IF一覧',
     priority: 'Must',
     category: '基本設計',
-    type: 'infrastructure',
+    type: ['infrastructure'],
     templates: [
       {
-        id: 'tpl-bd-01', name: 'システム方式設計書（Markdown）', format: 'MD', hasSample: true,
-        content: { markdown: '# システム方式設計書', sections: ['構成図', 'ネットワーク', '冗長化', '監視', '外部IF'] }
+        id: 'tpl-bd-01',
+        name: 'システム方式設計書（Markdown）',
+        format: 'MD',
+        hasSample: true,
+        contentRef: { provider: 'blob', key: 'tpl-bd-01', version: 'current' },
+        updatedAt: undefined
       }
     ],
+    isPhazeDlv: false,
     isOptedIn: true,
     dependencies: ['req-04', 'req-05'],
     position: { x: 200, y: 320 }
@@ -146,13 +282,18 @@ const deliverables: Deliverable[] = [
     requirements: '画面一覧/遷移図/項目仕様/入力チェック',
     priority: 'Must',
     category: '基本設計',
-    type: 'application',
+    type: ['application'],
     templates: [
       {
-        id: 'tpl-bd-02', name: '画面設計書（Markdown）', format: 'MD', hasSample: true,
-        content: { markdown: '# 画面設計書', sections: ['画面一覧', '遷移図', '項目仕様', '入力チェック'] }
+        id: 'tpl-bd-02',
+        name: '画面設計書（Markdown）',
+        format: 'MD',
+        hasSample: true,
+        contentRef: { provider: 'blob', key: 'tpl-bd-02', version: 'current' },
+        updatedAt: undefined
       }
     ],
+    isPhazeDlv: false,
     isOptedIn: true,
     dependencies: ['req-02', 'req-03'],
     position: { x: 420, y: 320 }
@@ -165,13 +306,18 @@ const deliverables: Deliverable[] = [
     requirements: '帳票一覧/レイアウト/項目仕様/出力条件',
     priority: 'Could',
     category: '基本設計',
-    type: 'application',
+    type: ['application'],
     templates: [
       {
-        id: 'tpl-bd-03', name: '帳票設計書（Markdown）', format: 'MD', hasSample: true,
-        content: { markdown: '# 帳票設計書', sections: ['帳票一覧', 'レイアウト', '項目仕様', '出力条件'] }
+        id: 'tpl-bd-03',
+        name: '帳票設計書（Markdown）',
+        format: 'MD',
+        hasSample: true,
+        contentRef: { provider: 'blob', key: 'tpl-bd-03', version: 'current' },
+        updatedAt: undefined
       }
     ],
+    isPhazeDlv: false,
     isOptedIn: false,
     dependencies: ['bd-02'],
     position: { x: 640, y: 320 }
@@ -184,13 +330,18 @@ const deliverables: Deliverable[] = [
     requirements: 'データ項目/型/制約/入出力条件',
     priority: 'Must',
     category: '基本設計',
-    type: 'application',
+    type: ['application'],
     templates: [
       {
-        id: 'tpl-bd-04', name: '入出力定義書（Markdown）', format: 'MD', hasSample: true,
-        content: { markdown: '# 入出力定義書', sections: ['機能I/O', '外部IF', 'バッチI/O'] }
+        id: 'tpl-bd-04',
+        name: '入出力定義書（Markdown）',
+        format: 'MD',
+        hasSample: true,
+        contentRef: { provider: 'blob', key: 'tpl-bd-04', version: 'current' },
+        updatedAt: undefined
       }
     ],
+    isPhazeDlv: false,
     isOptedIn: true,
     dependencies: ['req-02', 'bd-02'],
     position: { x: 200, y: 460 }
@@ -203,13 +354,18 @@ const deliverables: Deliverable[] = [
     requirements: 'ER図/テーブル定義/キー/制約',
     priority: 'Must',
     category: '基本設計',
-    type: 'application',
+    type: ['application'],
     templates: [
       {
-        id: 'tpl-bd-05', name: '論理DB設計書（Markdown）', format: 'MD', hasSample: true,
-        content: { markdown: '# 論理DB設計書', sections: ['ER図', 'テーブル定義', 'キー/制約'] }
+        id: 'tpl-bd-05',
+        name: '論理DB設計書（Markdown）',
+        format: 'MD',
+        hasSample: true,
+        contentRef: { provider: 'blob', key: 'tpl-bd-05', version: 'current' },
+        updatedAt: undefined
       }
     ],
+    isPhazeDlv: false,
     isOptedIn: true,
     dependencies: ['req-02'],
     position: { x: 420, y: 460 }
@@ -222,13 +378,18 @@ const deliverables: Deliverable[] = [
     requirements: '可用性/性能/運用/セキュリティ/移行/DR',
     priority: 'Must',
     category: '基本設計',
-    type: 'infrastructure',
+    type: ['infrastructure'],
     templates: [
       {
-        id: 'tpl-bd-07', name: '非機能設計書（Markdown）', format: 'MD', hasSample: true,
-        content: { markdown: '# 非機能設計書', sections: ['可用性', '性能', '運用', 'セキュリティ', '移行/DR'] }
+        id: 'tpl-bd-07',
+        name: '非機能設計書（Markdown）',
+        format: 'MD',
+        hasSample: true,
+        contentRef: { provider: 'blob', key: 'tpl-bd-07', version: 'current' },
+        updatedAt: undefined
       }
     ],
+    isPhazeDlv: false,
     isOptedIn: true,
     dependencies: ['req-04', 'bd-01'],
     position: { x: 860, y: 360 }
@@ -241,49 +402,54 @@ const deliverables: Deliverable[] = [
     requirements: 'サーバー構成/ネットワーク設計/セキュリティ/監視設計',
     priority: 'Must',
     category: '基本設計',
-    type: 'infrastructure',
+    type: ['infrastructure'],
     templates: [
       {
-        id: 'tpl-bd-08', name: 'インフラ基本設計書（Markdown）', format: 'MD', hasSample: true,
-        content: { markdown: '# インフラ基本設計書', sections: ['サーバー構成', 'ネットワーク設計', 'セキュリティ', '監視設計'] }
+        id: 'tpl-bd-08',
+        name: 'インフラ基本設計書（Markdown）',
+        format: 'MD',
+        hasSample: true,
+        contentRef: { provider: 'blob', key: 'tpl-bd-08', version: 'current' },
+        updatedAt: undefined
       }
     ],
+    isPhazeDlv: false,
     isOptedIn: true,
     dependencies: ['req-06', 'bd-01'],
     position: { x: 1060, y: 360 }
-  },
+  }
 ];
 
-const categories = [
+const categories: string[] = [
   '要件定義',
-  '基本設計',
+  '基本設計'
 ];
 
-const deliverableTypes = [
+const deliverableTypes: Array<{ value: string; label: string }> = [
   { value: 'application', label: 'アプリケーション成果物' },
-  { value: 'infrastructure', label: 'インフラ成果物' },
+  { value: 'infrastructure', label: 'インフラ成果物' }
 ];
 
-export class DeliverableRepository implements IDeliverableRepository {
-  getAll(): Deliverable[] {
-    return deliverables;
-  }
+// ===== Module (arrow functions) =====
 
-  getById(id: string): Deliverable | undefined {
-    return deliverables.find(d => d.id === id);
-  }
+export const getAll: IDeliverableRepository['getAll'] = (): Deliverable[] => deliverables;
 
-  getByCategory(category: string): Deliverable[] {
-    return deliverables.filter(d => d.category === category);
-  }
+export const getById: IDeliverableRepository['getById'] = (id: string): Deliverable | undefined =>
+  deliverables.find(d => d.id === id);
 
-  getCategories(): string[] {
-    return categories;
-  }
+export const getByCategory: IDeliverableRepository['getByCategory'] = (category: string): Deliverable[] =>
+  deliverables.filter(d => d.category === category);
 
-  getDeliverableTypes(): Array<{ value: string; label: string }> {
-    return deliverableTypes;
-  }
-}
+export const getCategories: IDeliverableRepository['getCategories'] = (): string[] => categories;
 
-export const deliverableRepository = new DeliverableRepository();
+export const getDeliverableTypes: IDeliverableRepository['getDeliverableTypes'] =
+  (): Array<{ value: string; label: string }> => deliverableTypes;
+
+// 互換エクスポート（旧コードが import していても動くように残す）
+export const deliverableRepository: IDeliverableRepository = {
+  getAll,
+  getById,
+  getByCategory,
+  getCategories,
+  getDeliverableTypes
+};

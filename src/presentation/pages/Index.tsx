@@ -11,7 +11,7 @@ import { Deliverable, PriorityType, DeliverableType } from '@/domain/entities/de
 import { FileSpreadsheet, Settings, Download, GitBranch, BookOpenText, AlertTriangle, Filter, Search } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/presentation/components/ui/select';
 import { Input } from '@/presentation/components/ui/input';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { assessDeliverableSelectionRisk } from '@/application/usecases/assess-deliverable-risk';
 
 type Phase = '要件定義' | '基本設計';
@@ -36,14 +36,14 @@ const Index = () => {
     return assessDeliverableSelectionRisk(
       deliverables,
       selectedDeliverables,
-      phase // ← 追加
+      phase
     );
-  }, [deliverables, phase]); // ← 依存に phase を追加
+  }, [deliverables, phase]);
 
   // 一覧の絞り込みに「フェーズ一致」を必須条件として追加
   const filteredDeliverables = useMemo(() => {
     return deliverables.filter(deliverable => {
-      const matchesPhase = deliverable.category === phase; // ← 追加（必須）
+      const matchesPhase = deliverable.category === phase;
       const matchesSearch =
         deliverable.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
         deliverable.description.toLowerCase().includes(searchTerm.toLowerCase());
@@ -52,11 +52,11 @@ const Index = () => {
       // 既存のカテゴリフィルタは“追加フィルタ”として扱う（必要ならallにしておけばOK）
       const matchesCategory = selectedCategory === 'all' || deliverable.category === selectedCategory;
 
-      const matchesType = selectedType === 'all' || deliverable.type === selectedType;
+      const matchesType = selectedType === 'all' || deliverable.type.includes(selectedType);
       const matchesOptIn = !showOptedInOnly || deliverable.isOptedIn;
 
       return (
-        matchesPhase && // ← ここが効く
+        matchesPhase &&
         matchesSearch &&
         matchesPriority &&
         matchesCategory &&
@@ -90,18 +90,18 @@ const Index = () => {
               </div>
             </div>
             <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={() => navigate('/docs')}>
-                <BookOpenText className="h-4 w-4 mr-2" />
-                Docs
-              </Button>
               <Button variant="outline" size="sm">
+                <BookOpenText className="h-4 w-4 mr-2" />
+                <Link to={`https://www.notion.so/278e8bc3d80d807695a2d7a2ec766aff?source=copy_link`}>Docs</Link>
+              </Button>
+              {/* <Button variant="outline" size="sm">
                 <Download className="h-4 w-4 mr-2" />
                 エクスポート
-              </Button>
-              <Button variant="outline" size="sm">
+              </Button> */}
+              {/* <Button variant="outline" size="sm">
                 <Settings className="h-4 w-4 mr-2" />
                 設定
-              </Button>
+              </Button> */}
             </div>
           </div>
         </div>
@@ -206,10 +206,10 @@ const Index = () => {
           <div className="mb-6">
             <Alert
               className={`border-l-4 ${riskAssessment.overallRisk === 'high'
-                  ? 'border-l-destructive'
-                  : riskAssessment.overallRisk === 'medium'
-                    ? 'border-l-warning'
-                    : 'border-l-success'
+                ? 'border-l-destructive'
+                : riskAssessment.overallRisk === 'medium'
+                  ? 'border-l-warning'
+                  : 'border-l-success'
                 }`}
             >
               <AlertTriangle className="h-4 w-4" />

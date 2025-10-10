@@ -14,6 +14,7 @@ export default defineConfig(({ mode }) => ({
   },
   plugins: [
     mdx({
+      exclude: ['content/templates/**'],
       remarkPlugins: [remarkGfm], // 表やチェックリスト等のMarkdown拡張
       rehypePlugins: [rehypeSlug], // 見出しにid付与（ToCに便利）
     }),

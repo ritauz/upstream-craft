@@ -1,13 +1,20 @@
-import { Deliverable, Template } from '@/domain/entities/deliverable';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/presentation/components/ui/dialog';
+import { Deliverable, TemplateRef } from '@/domain/entities/deliverable';
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription
+} from '@/presentation/components/ui/dialog';
 import { Badge } from '@/presentation/components/ui/badge';
 import { Button } from '@/presentation/components/ui/button';
 import { Separator } from '@/presentation/components/ui/separator';
-import { FileText, Target, CheckSquare, Settings, Copy, Eye } from 'lucide-react';
-import { TemplateCustomizationModal } from './TemplateCustomizationModal';
+import { FileText, Target, CheckSquare, Copy, Eye, Loader2 } from 'lucide-react';
 import { useState } from 'react';
 import { useToast } from '@/presentation/hooks/use-toast';
 import { ScrollArea } from '@/presentation/components/ui/scroll-area';
+import ReactMarkdown from 'react-markdown';
+import rehypeSanitize from 'rehype-sanitize';
+import { sanitizeSchema } from '@/infrastructure/utils/md-schema';
+import remarkGfm from 'remark-gfm';
+import rehypeRaw from 'rehype-raw';
+import { loadTemplateBody } from '@/infrastructure/content/template-loader';
 
 interface DeliverableModalProps {
   deliverable: Deliverable;
@@ -15,6 +22,7 @@ interface DeliverableModalProps {
   allDeliverables: Deliverable[]; // 依存関係の名前解決のために追加
 }
 
+/** 優先度バッジ色 */
 const getPriorityColor = (priority: string) => {
   switch (priority) {
     case 'Must': return 'bg-destructive text-destructive-foreground';
@@ -24,32 +32,41 @@ const getPriorityColor = (priority: string) => {
   }
 };
 
+/** フォーマット別アイコン */
 const getFormatIcon = (format: string) => {
   switch (format) {
     case 'Excel': return '📊';
     case 'Word': return '📄';
     case 'PDF': return '📋';
     case 'MD': return '📝';
+    case 'MDX': return '📝';
     default: return '📄';
   }
 };
 
 export const DeliverableModal = ({ deliverable, onClose, allDeliverables }: DeliverableModalProps) => {
-  const [customizationTemplate, setCustomizationTemplate] = useState<Template | null>(null);
   const [viewTemplate, setViewTemplate] = useState<{ name: string; content: string } | null>(null);
+  const [isFetching, setIsFetching] = useState<string | null>(null); // template.id を入れる
   const { toast } = useToast();
 
-  const handleTemplateAction = (template: Template) => {
-    if (template.sections && template.sections.length > 0) {
-      // カスタマイズ可能なテンプレートの場合、カスタマイズモーダルを開く
-      setCustomizationTemplate(template);
-    } else {
-      // テンプレート表示モーダルを開く
-      const content = generateTemplateContent(template.name);
+  /** テンプレ選択時のアクション：Blob（manifest 経由）から本文取得して表示 */
+  const handleTemplateAction = async (template: TemplateRef) => {
+    try {
+      setIsFetching(template.id);
+      const content = await loadTemplateBody(template.contentRef.key);
       setViewTemplate({ name: template.name, content });
+    } catch (e: any) {
+      toast({
+        title: 'テンプレート取得に失敗しました',
+        description: e?.message ?? '不明なエラーです',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsFetching(null);
     }
   };
 
+  /** 後方互換の自動生成テンプレ（contentRef がない異常系用） */
   const generateTemplateContent = (templateName: string) => {
     return `# ${templateName}
 
@@ -69,15 +86,18 @@ ${deliverable.requirements}` : ''}
 `;
   };
 
+  /** クリップボードコピー */
   const handleCopyTemplate = () => {
     if (viewTemplate) {
       navigator.clipboard.writeText(viewTemplate.content);
       toast({
-        title: "コピーしました",
-        description: "テンプレートがクリップボードにコピーされました。",
+        title: 'コピーしました',
+        description: 'テンプレートがクリップボードにコピーされました。'
       });
     }
   };
+
+  /** 依存成果物のタイトル解決 */
   const getDependencyTitle = (depId: string) => {
     const dep = allDeliverables.find(d => d.id === depId);
     return dep ? dep.title : depId;
@@ -150,44 +170,48 @@ ${deliverable.requirements}` : ''}
               利用可能なテンプレート
             </h3>
             <div className="space-y-3">
-              {deliverable.templates.map((template) => (
-                <div
-                  key={template.id}
-                  className="flex items-center justify-between p-3 bg-muted/50 rounded-lg border"
-                >
-                  <div className="flex items-center gap-3">
-                    <span className="text-lg">{getFormatIcon(template.format)}</span>
-                    <div>
-                      <div className="font-medium text-foreground">
-                        {template.name}
-                      </div>
-                      <div className="text-sm text-muted-foreground">
-                        {template.format}形式
-                        {template.hasSample && (
-                          <span className="ml-2 text-primary">• サンプル付き</span>
-                        )}
+              {deliverable.templates.map((template) => {
+                const isBusy = isFetching === template.id;
+                return (
+                  <div
+                    key={template.id}
+                    className="flex items-center justify-between p-3 bg-muted/50 rounded-lg border"
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="text-lg">{getFormatIcon(template.format)}</span>
+                      <div>
+                        <div className="font-medium text-foreground">
+                          {template.name}
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          {template.format}形式
+                          {template.hasSample && (
+                            <span className="ml-2 text-primary">• サンプル付き</span>
+                          )}
+                        </div>
                       </div>
                     </div>
+                    <Button
+                      size="sm"
+                      onClick={() => handleTemplateAction(template)}
+                      className="flex items-center gap-2"
+                      disabled={isBusy}
+                    >
+                      {isBusy ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          読み込み中
+                        </>
+                      ) : (
+                        <>
+                          <Eye className="w-4 h-4" />
+                          表示
+                        </>
+                      )}
+                    </Button>
                   </div>
-                  <Button
-                    size="sm"
-                    onClick={() => handleTemplateAction(template)}
-                    className="flex items-center gap-2"
-                  >
-                    {template.sections && template.sections.length > 0 ? (
-                      <>
-                        <Settings className="w-4 h-4" />
-                        カスタマイズ
-                      </>
-                    ) : (
-                      <>
-                        <Eye className="w-4 h-4" />
-                        表示
-                      </>
-                    )}
-                  </Button>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
 
@@ -201,12 +225,12 @@ ${deliverable.requirements}` : ''}
                 この成果物を作成するために必要な前提成果物です
               </div>
               <div className="space-y-2">
-                {deliverable.dependencies.map((depId, index) => (
+                {deliverable.dependencies.map((depId) => (
                   <div
                     key={depId}
                     className="flex items-center gap-2 p-2 bg-muted/30 rounded border"
                   >
-                    <div className="w-2 h-2 bg-primary rounded-full"></div>
+                    <div className="w-2 h-2 bg-primary rounded-full" />
                     <span className="text-sm font-medium text-foreground">
                       {getDependencyTitle(depId)}
                     </span>
@@ -218,16 +242,6 @@ ${deliverable.requirements}` : ''}
         </div>
       </DialogContent>
 
-      {/* Template Customization Modal */}
-      {customizationTemplate && (
-        <TemplateCustomizationModal
-          template={customizationTemplate}
-          deliverable={deliverable}
-          isOpen={!!customizationTemplate}
-          onClose={() => setCustomizationTemplate(null)}
-        />
-      )}
-
       {/* Template View Modal */}
       {viewTemplate && (
         <Dialog open={!!viewTemplate} onOpenChange={() => setViewTemplate(null)}>
@@ -235,11 +249,7 @@ ${deliverable.requirements}` : ''}
             <DialogHeader>
               <DialogTitle className="flex items-center justify-between">
                 <span>{viewTemplate.name}</span>
-                <Button
-                  size="sm"
-                  onClick={handleCopyTemplate}
-                  className="flex items-center gap-2"
-                >
+                <Button size="sm" onClick={handleCopyTemplate} className="flex items-center gap-2 m-2">
                   <Copy className="w-4 h-4" />
                   コピー
                 </Button>
@@ -248,14 +258,22 @@ ${deliverable.requirements}` : ''}
                 テンプレートの内容を確認し、コピーボタンでクリップボードにコピーできます。
               </DialogDescription>
             </DialogHeader>
-            <ScrollArea className="h-[60vh] w-full rounded-md border p-4">
-              <pre className="text-sm whitespace-pre-wrap font-mono">
+
+            <ScrollArea className="h-[60vh] w-full rounded-md border p-4 prose prose-sm dark:prose-invert">
+              <ReactMarkdown
+                remarkPlugins={[remarkGfm]}
+                rehypePlugins={[
+                  [rehypeSanitize, sanitizeSchema], // sanitize を必ず先に
+                  rehypeRaw                           // その後 raw を許可（スキーマで制御）
+                ]}
+              >
                 {viewTemplate.content}
-              </pre>
+              </ReactMarkdown>
             </ScrollArea>
           </DialogContent>
         </Dialog>
       )}
+
     </Dialog>
   );
 };
