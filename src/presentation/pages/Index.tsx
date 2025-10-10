@@ -123,7 +123,9 @@ const Index = () => {
   };
 
   const handleViewDetails = (deliverable: Deliverable) => {
-    setSearchParams({ deliverable: deliverable.id });
+    const newParams = new URLSearchParams(searchParams);
+    newParams.set('deliverable', deliverable.id);
+    setSearchParams(newParams);
   };
 
   const handleCloseModal = () => {
