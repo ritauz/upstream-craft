@@ -19,7 +19,31 @@ type Phase = '要件定義' | '基本設計';
 const Index = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const [deliverables, setDeliverables] = useState(deliverableRepository.getAll());
+  
+  // URLパラメータから選択されている成果物のIDリストを取得
+  const selectedIdsFromUrl = useMemo(() => {
+    const selectedParam = searchParams.get('selected');
+    return selectedParam ? selectedParam.split(',') : [];
+  }, [searchParams]);
+
+  // deliverableの初期状態をURLパラメータから復元
+  const [deliverables, setDeliverables] = useState(() => {
+    const allDeliverables = deliverableRepository.getAll();
+    return allDeliverables.map(d => ({
+      ...d,
+      isOptedIn: selectedIdsFromUrl.includes(d.id)
+    }));
+  });
+
+  // URLパラメータが変更されたら選択状態を同期
+  useEffect(() => {
+    setDeliverables(prev => 
+      prev.map(d => ({
+        ...d,
+        isOptedIn: selectedIdsFromUrl.includes(d.id)
+      }))
+    );
+  }, [selectedIdsFromUrl]);
 
   // 追加: フェーズ選択（初期値は要件定義）
   const [phase, setPhase] = useState<Phase>('要件定義');
@@ -30,7 +54,7 @@ const Index = () => {
   const [selectedType, setSelectedType] = useState<DeliverableType | 'all'>('all');
   const [showOptedInOnly, setShowOptedInOnly] = useState(false);
   
-  // URLパラメータから選択された成果物を取得
+  // URLパラメータから詳細モーダル表示用の成果物を取得
   const selectedDeliverableId = searchParams.get('deliverable');
   const selectedDeliverable = useMemo(() => {
     if (!selectedDeliverableId) return null;
@@ -74,9 +98,28 @@ const Index = () => {
   }, [deliverables, phase, searchTerm, selectedPriority, selectedCategory, selectedType, showOptedInOnly]);
 
   const handleToggleOptIn = (id: string, isOptedIn: boolean) => {
-    setDeliverables(prev =>
-      prev.map(d => (d.id === id ? { ...d, isOptedIn } : d))
-    );
+    setDeliverables(prev => {
+      const updated = prev.map(d => (d.id === id ? { ...d, isOptedIn } : d));
+      
+      // 選択されている成果物のIDリストを作成してURLを更新
+      const selectedIds = updated.filter(d => d.isOptedIn).map(d => d.id);
+      const newParams = new URLSearchParams(searchParams);
+      
+      if (selectedIds.length > 0) {
+        newParams.set('selected', selectedIds.join(','));
+      } else {
+        newParams.delete('selected');
+      }
+      
+      // deliverableパラメータは保持
+      if (searchParams.get('deliverable')) {
+        newParams.set('deliverable', searchParams.get('deliverable')!);
+      }
+      
+      setSearchParams(newParams);
+      
+      return updated;
+    });
   };
 
   const handleViewDetails = (deliverable: Deliverable) => {
