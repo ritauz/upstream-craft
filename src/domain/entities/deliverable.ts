@@ -40,6 +40,13 @@ export interface TemplateContent {
   sections: string[];
 }
 
+export interface Template {
+  id: string;
+  name: string;
+  format: TemplateFormat;
+  sections?: TemplateSection[];
+}
+
 export interface TemplateSection {
   id: string;
   name: string;

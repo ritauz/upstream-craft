@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 
 import { DeliverableCard } from '@/presentation/components/DeliverableCard';
 import { DeliverableModal } from '@/presentation/components/DeliverableModal';
@@ -11,13 +11,14 @@ import { Deliverable, PriorityType, DeliverableType } from '@/domain/entities/de
 import { FileSpreadsheet, Settings, Download, GitBranch, BookOpenText, AlertTriangle, Filter, Search } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/presentation/components/ui/select';
 import { Input } from '@/presentation/components/ui/input';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { assessDeliverableSelectionRisk } from '@/application/usecases/assess-deliverable-risk';
 
 type Phase = '要件定義' | '基本設計';
 
 const Index = () => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [deliverables, setDeliverables] = useState(deliverableRepository.getAll());
 
   // 追加: フェーズ選択（初期値は要件定義）
@@ -28,7 +29,13 @@ const Index = () => {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedType, setSelectedType] = useState<DeliverableType | 'all'>('all');
   const [showOptedInOnly, setShowOptedInOnly] = useState(false);
-  const [selectedDeliverable, setSelectedDeliverable] = useState<Deliverable | null>(null);
+  
+  // URLパラメータから選択された成果物を取得
+  const selectedDeliverableId = searchParams.get('deliverable');
+  const selectedDeliverable = useMemo(() => {
+    if (!selectedDeliverableId) return null;
+    return deliverables.find(d => d.id === selectedDeliverableId) || null;
+  }, [selectedDeliverableId, deliverables]);
 
   // リスク評価（フェーズを渡す）
   const riskAssessment = useMemo(() => {
@@ -73,7 +80,11 @@ const Index = () => {
   };
 
   const handleViewDetails = (deliverable: Deliverable) => {
-    setSelectedDeliverable(deliverable);
+    setSearchParams({ deliverable: deliverable.id });
+  };
+
+  const handleCloseModal = () => {
+    setSearchParams({});
   };
 
   return (
@@ -289,7 +300,7 @@ const Index = () => {
       {selectedDeliverable && (
         <DeliverableModal
           deliverable={selectedDeliverable}
-          onClose={() => setSelectedDeliverable(null)}
+          onClose={handleCloseModal}
           allDeliverables={deliverables}
         />
       )}
