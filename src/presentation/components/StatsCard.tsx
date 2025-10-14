@@ -11,9 +11,8 @@ interface StatsCardProps {
 export const StatsCard = ({ deliverables, filteredDeliverables }: StatsCardProps) => {
   const totalCount = deliverables.length;
   const optedInCount = deliverables.filter(d => d.isOptedIn).length;
-  const mustCount = deliverables.filter(d => d.priority === 'Must').length;
-  const shouldCount = deliverables.filter(d => d.priority === 'Should').length;
-  const couldCount = deliverables.filter(d => d.priority === 'Could').length;
+  const appCount = deliverables.filter(d => d.type.includes('application')).length;
+  const infraCount = deliverables.filter(d => d.type.includes('infrastructure')).length;
   
   const filteredCount = filteredDeliverables.length;
   const filteredOptedInCount = filteredDeliverables.filter(d => d.isOptedIn).length;
@@ -66,19 +65,16 @@ export const StatsCard = ({ deliverables, filteredDeliverables }: StatsCardProps
         <CardHeader className="pb-2">
           <CardTitle className="text-sm font-medium flex items-center gap-2">
             <AlertCircle className="h-4 w-4" />
-            優先度別
+            タイプ別
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex gap-1 flex-wrap">
-            <Badge className="bg-must text-must-foreground text-xs">
-              Must: {mustCount}
+          <div className="flex gap-2 flex-wrap">
+            <Badge variant="secondary" className="text-xs">
+              アプリ: {appCount}
             </Badge>
-            <Badge className="bg-should text-should-foreground text-xs">
-              Should: {shouldCount}
-            </Badge>
-            <Badge className="bg-could text-could-foreground text-xs">
-              Could: {couldCount}
+            <Badge variant="secondary" className="text-xs">
+              インフラ: {infraCount}
             </Badge>
           </div>
         </CardContent>

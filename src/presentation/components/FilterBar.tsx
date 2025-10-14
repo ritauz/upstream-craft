@@ -8,15 +8,13 @@ import {
   SelectTrigger,
   SelectValue
 } from '@/presentation/components/ui/select';
-import { PriorityType, DeliverableType } from '@/domain/entities/deliverable';
+import { DeliverableType } from '@/domain/entities/deliverable';
 import { Search, Filter, X } from 'lucide-react';
 import { deliverableRepository } from '@/infrastructure/repositories/deliverable-repository';
 
 interface FilterBarProps {
   searchTerm: string;
   onSearchChange: (term: string) => void;
-  selectedPriority: PriorityType | 'all';
-  onPriorityChange: (priority: PriorityType | 'all') => void;
   selectedCategory: string;
   onCategoryChange: (category: string) => void;
   selectedType: DeliverableType | 'all';
@@ -28,8 +26,6 @@ interface FilterBarProps {
 export const FilterBar = ({
   searchTerm,
   onSearchChange,
-  selectedPriority,
-  onPriorityChange,
   selectedCategory,
   onCategoryChange,
   selectedType,
@@ -39,14 +35,12 @@ export const FilterBar = ({
 }: FilterBarProps) => {
   const hasActiveFilters =
     searchTerm ||
-    selectedPriority !== 'all' ||
     selectedCategory !== 'all' ||
     selectedType !== 'all' ||
     showOptedInOnly;
 
   const clearFilters = () => {
     onSearchChange('');
-    onPriorityChange('all');
     onCategoryChange('all');
     onTypeChange('all');
     if (showOptedInOnly) onOptedInToggle();
@@ -83,19 +77,6 @@ export const FilterBar = ({
           </div>
         </div>
 
-        {/* 優先度フィルター */}
-        <Select value={selectedPriority} onValueChange={onPriorityChange}>
-          <SelectTrigger className="w-32">
-            <SelectValue placeholder="優先度" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">全ての優先度</SelectItem>
-            <SelectItem value="Must">Must</SelectItem>
-            <SelectItem value="Should">Should</SelectItem>
-            <SelectItem value="Could">Could</SelectItem>
-          </SelectContent>
-        </Select>
-
         {/* 選択中のみフィルター */}
         <Button
           variant={showOptedInOnly ? "default" : "outline"}
@@ -126,12 +107,6 @@ export const FilterBar = ({
             <Badge variant="secondary" className="gap-1">
               検索: {searchTerm}
               <X className="h-3 w-3 cursor-pointer" onClick={() => onSearchChange('')} />
-            </Badge>
-          )}
-          {selectedPriority !== 'all' && (
-            <Badge variant="secondary" className="gap-1">
-              {selectedPriority}
-              <X className="h-3 w-3 cursor-pointer" onClick={() => onPriorityChange('all')} />
             </Badge>
           )}
           {selectedType !== 'all' && (

@@ -48,15 +48,12 @@ export const TemplateCustomizationModal: React.FC<TemplateCustomizationModalProp
     const requiredSections = updatedSections.filter(s => s.required);
     const missingRequired = requiredSections.filter(rs => !selectedSections.find(s => s.id === rs.id));
     
-    let overallRisk: 'low' | 'medium' | 'high' = 'low';
     const risks: any[] = [];
     const recommendations: string[] = [];
 
     if (missingRequired.length > 0) {
-      overallRisk = 'high';
       risks.push({
         id: 'missing-required',
-        level: 'high',
         description: '必須セクションが選択されていません',
         impact: `${missingRequired.map(s => s.name).join('、')} が含まれないため、成果物として不完全になる可能性があります。`,
         mitigation: '必須セクションを選択することを強く推奨します。'
@@ -68,10 +65,8 @@ export const TemplateCustomizationModal: React.FC<TemplateCustomizationModalProp
     const unselectedOptional = optionalSections.filter(os => !selectedSections.find(s => s.id === os.id));
     
     if (unselectedOptional.length > 2) {
-      overallRisk = overallRisk === 'high' ? 'high' : 'medium';
       risks.push({
         id: 'incomplete-documentation',
-        level: 'medium',
         description: '多くの任意項目が除外されています',
         impact: '将来の保守性や理解のしやすさが低下する可能性があります。',
         mitigation: 'プロジェクトの性質に応じて必要な項目を追加選択することを検討してください。'
@@ -80,7 +75,6 @@ export const TemplateCustomizationModal: React.FC<TemplateCustomizationModalProp
     }
 
     setRiskAssessment({
-      overallRisk,
       risks,
       recommendations
     });
@@ -118,14 +112,6 @@ export const TemplateCustomizationModal: React.FC<TemplateCustomizationModalProp
         title: "コピーしました",
         description: "カスタマイズされたテンプレートがクリップボードにコピーされました。",
       });
-    }
-  };
-
-  const getRiskColor = (level: 'low' | 'medium' | 'high') => {
-    switch (level) {
-      case 'high': return 'bg-destructive text-destructive-foreground';
-      case 'medium': return 'bg-warning text-warning-foreground';
-      case 'low': return 'bg-success text-success-foreground';
     }
   };
 
@@ -183,20 +169,12 @@ export const TemplateCustomizationModal: React.FC<TemplateCustomizationModalProp
           </div>
 
           {/* リスク評価 */}
-          {riskAssessment && (
+          {riskAssessment && riskAssessment.risks.length > 0 && (
             <div className="space-y-3">
               <h3 className="text-lg font-medium flex items-center gap-2">
                 <AlertTriangle className="w-5 h-5" />
                 リスク評価
               </h3>
-              
-              <div className="flex items-center gap-2 mb-3">
-                <span>総合リスクレベル:</span>
-                <Badge className={getRiskColor(riskAssessment.overallRisk)}>
-                  {riskAssessment.overallRisk === 'high' ? '高' : 
-                   riskAssessment.overallRisk === 'medium' ? '中' : '低'}
-                </Badge>
-              </div>
 
               {riskAssessment.risks.map(risk => (
                 <Alert key={risk.id} className="border-l-4 border-l-warning">

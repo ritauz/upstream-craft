@@ -24,14 +24,7 @@ const getCategoryIcon = (category: string) => {
   }
 };
 
-const getPriorityColor = (priority: string) => {
-  switch (priority) {
-    case 'Must': return 'bg-destructive text-destructive-foreground';
-    case 'Should': return 'bg-warning text-warning-foreground';
-    case 'Could': return 'bg-success text-success-foreground';
-    default: return 'bg-secondary text-secondary-foreground';
-  }
-};
+// Priority feature removed - not in current data model
 
 export const DeliverableDiagram = ({ deliverables, onDeliverableClick }: DeliverableDiagramProps) => {
   // 成果物を論理的なグループに分類
@@ -86,74 +79,9 @@ export const DeliverableDiagram = ({ deliverables, onDeliverableClick }: Deliver
 
   const groups = getLogicalGroups();
   
-  // 依存関係の矢印を描画
+  // Dependencies feature removed - not in current data model
   const renderArrows = () => {
-    const arrows = [];
-    
-    // グループ内の成果物の位置を計算（カードの端点を考慮）
-    const getDeliverableConnectionPoint = (deliverableId: string, isSource: boolean) => {
-      for (const [groupKey, group] of Object.entries(groups)) {
-        const itemIndex = group.items.findIndex(item => item.id === deliverableId);
-        if (itemIndex !== -1) {
-          const cardWidth = 250;
-          const cardHeight = 100;
-          const cardX = group.position.x + 15; // グループ内のパディング
-          const cardY = group.position.y + 60 + (itemIndex * 120); // グループタイトル + カード間隔
-          
-          // ソース（出力）の場合は右端、ターゲット（入力）の場合は左端
-          if (isSource) {
-            return {
-              x: cardX + cardWidth, // 右端
-              y: cardY + cardHeight / 2 // 中央
-            };
-          } else {
-            return {
-              x: cardX, // 左端
-              y: cardY + cardHeight / 2 // 中央
-            };
-          }
-        }
-      }
-      return null;
-    };
-    
-    deliverables.forEach(deliverable => {
-      if (deliverable.dependencies && deliverable.dependencies.length > 0) {
-        deliverable.dependencies.forEach((depId, index) => {
-          const fromPos = getDeliverableConnectionPoint(depId, true);
-          const toPos = getDeliverableConnectionPoint(deliverable.id, false);
-          
-          if (fromPos && toPos) {
-            // 矢印が重ならないように少しオフセットを追加
-            const offsetY = (index - (deliverable.dependencies!.length - 1) / 2) * 10;
-            const arrowId = `arrow-${depId}-${deliverable.id}`;
-            
-            // ベジェ曲線を使って滑らかな矢印を描画
-            const midX = (fromPos.x + toPos.x) / 2;
-            const curvature = Math.abs(toPos.x - fromPos.x) * 0.3;
-            
-            arrows.push(
-              <g key={arrowId}>
-                <path
-                  d={`M ${fromPos.x} ${fromPos.y + offsetY} 
-                      C ${fromPos.x + curvature} ${fromPos.y + offsetY}, 
-                        ${toPos.x - curvature} ${toPos.y + offsetY}, 
-                        ${toPos.x - 8} ${toPos.y + offsetY}`}
-                  stroke="hsl(var(--primary))"
-                  strokeWidth="2"
-                  fill="none"
-                  markerEnd="url(#arrowhead)"
-                  strokeDasharray="5,5"
-                  opacity="0.7"
-                />
-              </g>
-            );
-          }
-        });
-      }
-    });
-    
-    return arrows;
+    return [];
   };
 
   return (
@@ -246,15 +174,10 @@ export const DeliverableDiagram = ({ deliverables, onDeliverableClick }: Deliver
                           <div className="flex items-center justify-between">
                             <Badge 
                               variant="secondary" 
-                              className={`text-xs px-1.5 py-0.5 ${getPriorityColor(deliverable.priority)}`}
+                              className="text-xs px-1.5 py-0.5"
                             >
-                              {deliverable.priority}
+                              {deliverable.category}
                             </Badge>
-                            {deliverable.dependencies && deliverable.dependencies.length > 0 && (
-                              <div className="text-xs text-muted-foreground">
-                                依存: {deliverable.dependencies.length}
-                              </div>
-                            )}
                           </div>
                         </div>
                       </div>
