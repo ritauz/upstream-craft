@@ -13,12 +13,11 @@ const deliverables: Deliverable[] = [
     description: '要件定義で行った全ての工程は、この要件定義書に統合される。',
     purpose: '顧客と開発側の合意の証。契約・品質・スコープを規定する。',
     requirements: '目的/KPI/アクター/トリガー/前提条件/アウトカム',
-    priority: 'Must',
     category: '要件定義',
     type: ['application', 'infrastructure'],
     templates: [
       {
-        id: 'tpl-req-01',
+        id: 'tpl-req-00',
         name: '業務要件一覧書（Markdown）',
         format: 'MD',
         hasSample: true,
@@ -28,8 +27,6 @@ const deliverables: Deliverable[] = [
     ],
     isPhazeDlv: true,
     isOptedIn: true,
-    dependencies: [],
-    position: { x: 120, y: 120 }
   },
   {
     id: 'req-01',
@@ -37,7 +34,6 @@ const deliverables: Deliverable[] = [
     description: 'システムに関連する業務を洗い出し、一覧にして、システム化対象か対象外か明記する。',
     purpose: '•ステークホルダー間で「業務」に対する認識齟齬を防ぎ、合意形成を支援する• システム化対象業務と対象外業務を識別し、スコープを明確にする• トレーサビリティ（業務 → 機能 → 非機能要件、さらにはテスト仕様等）の出発点となる',
     requirements: '目的/KPI/アクター/トリガー/前提条件/アウトカム',
-    priority: 'Must',
     category: '要件定義',
     type: ['application'],
     templates: [
@@ -50,10 +46,10 @@ const deliverables: Deliverable[] = [
         updatedAt: undefined
       }
     ],
+    risks: "対象/非対象や範囲が曖昧となり合意形成とスコープ管理が破綻して、トレーサビリティ起点も失われる。"
+    ,
     isPhazeDlv: false,
     isOptedIn: true,
-    dependencies: [],
-    position: { x: 120, y: 120 }
   },
   {
     id: 'req-02',
@@ -61,7 +57,6 @@ const deliverables: Deliverable[] = [
     description: '業務やシステムを設計・運用する上で守らなければならない条件や制約を明確に整理する。',
     purpose: '機能スコープの明確化と優先順位付け',
     requirements: '機能ID/名称/説明/入出力/優先度',
-    priority: 'Must',
     category: '要件定義',
     type: ['application'],
     templates: [
@@ -74,10 +69,10 @@ const deliverables: Deliverable[] = [
         updatedAt: undefined
       }
     ],
+    risks: "'設計・改善の判断基準が不明確なまま進行し、実現不能なTo-Beや見積崩れ・大幅な手戻りを招く。'"
+    ,
     isPhazeDlv: false,
     isOptedIn: true,
-    dependencies: ['req-01'],
-    position: { x: 320, y: 120 }
   },
   {
     id: 'req-03',
@@ -85,7 +80,6 @@ const deliverables: Deliverable[] = [
     description: '対象業務のAsIs業務フローとToBe業務フローを一覧に整理する。',
     purpose: '利用シナリオと業務手順の可視化',
     requirements: 'アクター/シナリオ/入出力/分岐/イベント',
-    priority: 'Should',
     category: '要件定義',
     type: ['application'],
     templates: [
@@ -100,8 +94,53 @@ const deliverables: Deliverable[] = [
     ],
     isPhazeDlv: false,
     isOptedIn: true,
-    dependencies: ['req-01', 'req-02'],
-    position: { x: 520, y: 120 }
+  },
+  {
+    id: 'req-03.1',
+    title: 'AsIs業務フロー',
+    description: '対象業務のAsIs業務フローとToBe業務フローを一覧に整理する。',
+    purpose: '利用シナリオと業務手順の可視化',
+    requirements: 'アクター/シナリオ/入出力/分岐/イベント',
+    category: '要件定義',
+    type: ['application'],
+    templates: [
+      {
+        id: 'tpl-req-03',
+        name: 'ユースケース/フロー図の作成ガイド',
+        format: 'MD',
+        hasSample: true,
+        contentRef: { provider: 'blob', key: 'tpl-req-03', version: 'current' },
+        updatedAt: undefined
+      }
+    ],
+    risks: "現行業務の流れと課題が共有されず、ToBe検討の土台が欠落して改善効果が出ない設計に陥る。"
+    ,
+    isPhazeDlv: false,
+    isOptedIn: true,
+  },
+  {
+    id: 'req-03.2',
+    title: 'ToBe業務フロー',
+    description: '対象業務のAsIs業務フローとToBe業務フローを一覧に整理する。',
+    purpose: '利用シナリオと業務手順の可視化',
+    requirements: 'アクター/シナリオ/入出力/分岐/イベント',
+    category: '要件定義',
+    type: ['application'],
+    templates: [
+      {
+        id: 'tpl-req-03',
+        name: 'ユースケース/フロー図の作成ガイド',
+        format: 'MD',
+        hasSample: true,
+        contentRef: { provider: 'blob', key: 'tpl-req-03', version: 'current' },
+        updatedAt: undefined
+      }
+    ],
+    risks: "将来の業務像と責任分担・情報連携が定義されず、要件の根拠が曖昧で合意も取れず運用テストにも落とし込めない。"
+
+    ,
+    isPhazeDlv: false,
+    isOptedIn: true,
   },
   {
     id: 'req-04',
@@ -109,7 +148,6 @@ const deliverables: Deliverable[] = [
     description: '業務で扱う情報（データ）を統一的に整理し、属性・型・意味・利用ルールを定義する。',
     purpose: 'プロジェクトの公式な合意文書',
     requirements: '範囲/境界/除外/機能/非機能/制約/リスク',
-    priority: 'Must',
     category: '要件定義',
     type: ['application'],
     templates: [
@@ -122,10 +160,10 @@ const deliverables: Deliverable[] = [
         updatedAt: undefined
       }
     ],
+    risks: 'データ項目の意味・構造の共通認識がなく、設計やDB定義の基礎が揺らいで連携不整合や移行不具合が増える。'
+    ,
     isPhazeDlv: false,
     isOptedIn: true,
-    dependencies: ['req-01', 'req-02', 'req-03', 'req-04'],
-    position: { x: 920, y: 120 }
   },
   {
     id: 'req-05',
@@ -133,7 +171,6 @@ const deliverables: Deliverable[] = [
     description: 'ToBe業務フローで定義した手順・役割を具体的に運用可能にするために、「どのような条件・基準・判断ルールで業務が実行されるか」を明確化する。',
     purpose: 'システム基盤の要件明確化',
     requirements: 'ネットワーク/サーバー/ストレージ/セキュリティ/監視',
-    priority: 'Must',
     category: '要件定義',
     type: ['application'],
     templates: [
@@ -146,10 +183,10 @@ const deliverables: Deliverable[] = [
         updatedAt: undefined
       }
     ],
+    risks: 'フロー図で表現し切れない判断条件が口伝に留まり運用が再現性を欠き、システム要件の根拠も弱体化する。'
+    ,
     isPhazeDlv: false,
     isOptedIn: true,
-    dependencies: ['req-04'],
-    position: { x: 1120, y: 120 }
   },
   {
     id: 'req-06',
@@ -157,7 +194,6 @@ const deliverables: Deliverable[] = [
     description: '業務・システム関連の用語を定義し、ステークホルダー間で共通理解を形成する。',
     purpose: 'システム基盤の要件明確化',
     requirements: 'ネットワーク/サーバー/ストレージ/セキュリティ/監視',
-    priority: 'Must',
     category: '要件定義',
     type: ['application'],
     templates: [
@@ -170,10 +206,10 @@ const deliverables: Deliverable[] = [
         updatedAt: undefined
       }
     ],
+    risks: '共通言語が確立されず解釈のばらつきが恒常化し、要件・設計・テストの議論が空回りして差し戻しが増える。'
+    ,
     isPhazeDlv: false,
     isOptedIn: true,
-    dependencies: ['req-04'],
-    position: { x: 1120, y: 120 }
   },
   {
     id: 'req-07',
@@ -182,7 +218,6 @@ const deliverables: Deliverable[] = [
 「何をシステムで行うのか」「どのように業務を支援するのか」を明確にする。`,
     purpose: 'システム基盤の要件明確化',
     requirements: 'ネットワーク/サーバー/ストレージ/セキュリティ/監視',
-    priority: 'Must',
     category: '要件定義',
     type: ['application'],
     templates: [
@@ -195,10 +230,10 @@ const deliverables: Deliverable[] = [
         updatedAt: undefined
       }
     ],
+    risks: '必要機能の範囲・粒度・優先度が不明確で、認識齟齬と過不足実装が発生し基本設計や見積の根拠が崩れる。'
+    ,
     isPhazeDlv: false,
     isOptedIn: true,
-    dependencies: ['req-04'],
-    position: { x: 1120, y: 120 }
   },
   {
     id: 'req-08',
@@ -206,7 +241,6 @@ const deliverables: Deliverable[] = [
     description: 'システムが備えるべき性能・信頼性・可用性・セキュリティなど、機能以外の品質要求を明確化する。',
     purpose: 'システム基盤の要件明確化',
     requirements: 'ネットワーク/サーバー/ストレージ/セキュリティ/監視',
-    priority: 'Must',
     category: '要件定義',
     type: ['application', 'infrastructure'],
     templates: [
@@ -219,10 +253,11 @@ const deliverables: Deliverable[] = [
         updatedAt: undefined
       }
     ],
+    risks: '品質水準と指針・受入基準の根拠が欠落し、性能や可用性・セキュリティに関する合意が得られず品質保証が困難になる。'
+
+    ,
     isPhazeDlv: false,
     isOptedIn: true,
-    dependencies: ['req-04'],
-    position: { x: 1120, y: 120 }
   },
   {
     id: 'req-09',
@@ -230,7 +265,6 @@ const deliverables: Deliverable[] = [
     description: 'システムやサービスの構成要素（アクター、サーバ、アプリケーション、DB、ネットワーク、外部サービスなど）を視覚的に表現する。',
     purpose: 'システム基盤の要件明確化',
     requirements: 'ネットワーク/サーバー/ストレージ/セキュリティ/監視',
-    priority: 'Must',
     category: '要件定義',
     type: ['application', 'infrastructure'],
     templates: [
@@ -243,10 +277,10 @@ const deliverables: Deliverable[] = [
         updatedAt: undefined
       }
     ],
+    risks: '全体構成と接続関係が可視化されず設計・運用の指針が曖昧で、関係者の認識が合わず障害時の影響把握も遅れる。'
+    ,
     isPhazeDlv: false,
     isOptedIn: true,
-    dependencies: ['req-04'],
-    position: { x: 1120, y: 120 }
   },
 
   // === 基本設計（Basic Design） ===
@@ -256,7 +290,6 @@ const deliverables: Deliverable[] = [
     description: '構成方式、冗長化、ネットワーク、外部IF方式の設計',
     purpose: '非機能要件に適合する方式決定',
     requirements: '構成図/ネットワーク/冗長化/監視/外部IF一覧',
-    priority: 'Must',
     category: '基本設計',
     type: ['infrastructure'],
     templates: [
@@ -271,8 +304,6 @@ const deliverables: Deliverable[] = [
     ],
     isPhazeDlv: false,
     isOptedIn: true,
-    dependencies: ['req-04', 'req-05'],
-    position: { x: 200, y: 320 }
   },
   {
     id: 'bd-02',
@@ -280,7 +311,6 @@ const deliverables: Deliverable[] = [
     description: 'UIプロトタイプ、画面遷移、入力・表示項目仕様',
     purpose: '機能設計の基礎となるUI仕様の確定',
     requirements: '画面一覧/遷移図/項目仕様/入力チェック',
-    priority: 'Must',
     category: '基本設計',
     type: ['application'],
     templates: [
@@ -295,8 +325,6 @@ const deliverables: Deliverable[] = [
     ],
     isPhazeDlv: false,
     isOptedIn: true,
-    dependencies: ['req-02', 'req-03'],
-    position: { x: 420, y: 320 }
   },
   {
     id: 'bd-03',
@@ -304,7 +332,6 @@ const deliverables: Deliverable[] = [
     description: '帳票レイアウト・項目仕様・出力条件の設計',
     purpose: '帳票要件の実装仕様化',
     requirements: '帳票一覧/レイアウト/項目仕様/出力条件',
-    priority: 'Could',
     category: '基本設計',
     type: ['application'],
     templates: [
@@ -319,8 +346,6 @@ const deliverables: Deliverable[] = [
     ],
     isPhazeDlv: false,
     isOptedIn: false,
-    dependencies: ['bd-02'],
-    position: { x: 640, y: 320 }
   },
   {
     id: 'bd-04',
@@ -328,7 +353,6 @@ const deliverables: Deliverable[] = [
     description: '機能/外部IFの入出力データ仕様',
     purpose: '連携・バッチ・画面I/Oの統一仕様',
     requirements: 'データ項目/型/制約/入出力条件',
-    priority: 'Must',
     category: '基本設計',
     type: ['application'],
     templates: [
@@ -343,8 +367,6 @@ const deliverables: Deliverable[] = [
     ],
     isPhazeDlv: false,
     isOptedIn: true,
-    dependencies: ['req-02', 'bd-02'],
-    position: { x: 200, y: 460 }
   },
   {
     id: 'bd-05',
@@ -352,7 +374,6 @@ const deliverables: Deliverable[] = [
     description: '論理データモデル（ER）とテーブル定義',
     purpose: 'データ整合性と拡張性の担保',
     requirements: 'ER図/テーブル定義/キー/制約',
-    priority: 'Must',
     category: '基本設計',
     type: ['application'],
     templates: [
@@ -367,8 +388,6 @@ const deliverables: Deliverable[] = [
     ],
     isPhazeDlv: false,
     isOptedIn: true,
-    dependencies: ['req-02'],
-    position: { x: 420, y: 460 }
   },
   {
     id: 'bd-07',
@@ -376,7 +395,6 @@ const deliverables: Deliverable[] = [
     description: 'クラスタ/フェイルオーバー、性能試算、監視・バックアップ、セキュリティ、移行/DR設計',
     purpose: '非機能要件を満たす具体的な方式を定義',
     requirements: '可用性/性能/運用/セキュリティ/移行/DR',
-    priority: 'Must',
     category: '基本設計',
     type: ['infrastructure'],
     templates: [
@@ -391,8 +409,6 @@ const deliverables: Deliverable[] = [
     ],
     isPhazeDlv: false,
     isOptedIn: true,
-    dependencies: ['req-04', 'bd-01'],
-    position: { x: 860, y: 360 }
   },
   {
     id: 'bd-08',
@@ -400,7 +416,6 @@ const deliverables: Deliverable[] = [
     description: 'サーバー構成・ネットワーク設計・セキュリティ方式の詳細設計',
     purpose: 'インフラ要件を満たす具体的な設計',
     requirements: 'サーバー構成/ネットワーク設計/セキュリティ/監視設計',
-    priority: 'Must',
     category: '基本設計',
     type: ['infrastructure'],
     templates: [
@@ -415,8 +430,6 @@ const deliverables: Deliverable[] = [
     ],
     isPhazeDlv: false,
     isOptedIn: true,
-    dependencies: ['req-06', 'bd-01'],
-    position: { x: 1060, y: 360 }
   }
 ];
 

@@ -111,12 +111,6 @@ ${deliverable.requirements}` : ''}
             <DialogTitle className="text-xl font-bold">
               {deliverable.title}
             </DialogTitle>
-            <Badge
-              variant="secondary"
-              className={getPriorityColor(deliverable.priority)}
-            >
-              {deliverable.priority}
-            </Badge>
           </div>
           <DialogDescription asChild>
             <Badge variant="outline" className="w-fit">
@@ -214,31 +208,6 @@ ${deliverable.requirements}` : ''}
               })}
             </div>
           </div>
-
-          {/* インプット成果物 */}
-          {deliverable.dependencies && deliverable.dependencies.length > 0 && (
-            <div>
-              <h3 className="font-semibold text-foreground mb-3">
-                インプットとなる成果物
-              </h3>
-              <div className="text-sm text-muted-foreground mb-3">
-                この成果物を作成するために必要な前提成果物です
-              </div>
-              <div className="space-y-2">
-                {deliverable.dependencies.map((depId) => (
-                  <div
-                    key={depId}
-                    className="flex items-center gap-2 p-2 bg-muted/30 rounded border"
-                  >
-                    <div className="w-2 h-2 bg-primary rounded-full" />
-                    <span className="text-sm font-medium text-foreground">
-                      {getDependencyTitle(depId)}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
       </DialogContent>
 

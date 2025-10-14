@@ -7,7 +7,7 @@ import { Badge } from '@/presentation/components/ui/badge';
 import { Button } from '@/presentation/components/ui/button';
 import { Alert, AlertDescription } from '@/presentation/components/ui/alert';
 import { deliverableRepository } from '@/infrastructure/repositories/deliverable-repository';
-import { Deliverable, PriorityType, DeliverableType } from '@/domain/entities/deliverable';
+import { Deliverable, DeliverableType } from '@/domain/entities/deliverable';
 import { FileSpreadsheet, Settings, Download, GitBranch, BookOpenText, AlertTriangle, Filter, Search } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/presentation/components/ui/select';
 import { Input } from '@/presentation/components/ui/input';
@@ -17,9 +17,8 @@ import { assessDeliverableSelectionRisk } from '@/application/usecases/assess-de
 type Phase = '要件定義' | '基本設計';
 
 const Index = () => {
-  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  
+
   // URLパラメータから選択されている成果物のIDリストを取得
   const selectedIdsFromUrl = useMemo(() => {
     const selectedParam = searchParams.get('selected');
@@ -37,10 +36,10 @@ const Index = () => {
 
   // URLパラメータが変更されたら選択状態を同期
   useEffect(() => {
-    setDeliverables(prev => 
+    setDeliverables(prev =>
       prev.map(d => ({
         ...d,
-        isOptedIn: selectedIdsFromUrl.includes(d.id)
+        isOptedIn: selectedIdsFromUrl.includes(d.id) || d.isPhazeDlv === true,
       }))
     );
   }, [selectedIdsFromUrl]);
@@ -49,11 +48,12 @@ const Index = () => {
   const [phase, setPhase] = useState<Phase>('要件定義');
 
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedPriority, setSelectedPriority] = useState<PriorityType | 'all'>('all');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedType, setSelectedType] = useState<DeliverableType | 'all'>('all');
   const [showOptedInOnly, setShowOptedInOnly] = useState(false);
-  
+  const [riskAssessment, setRiskAssessment] =
+    useState<ReturnType<typeof assessDeliverableSelectionRisk> | null>(null);
+
   // URLパラメータから詳細モーダル表示用の成果物を取得
   const selectedDeliverableId = searchParams.get('deliverable');
   const selectedDeliverable = useMemo(() => {
@@ -61,15 +61,23 @@ const Index = () => {
     return deliverables.find(d => d.id === selectedDeliverableId) || null;
   }, [selectedDeliverableId, deliverables]);
 
-  // リスク評価（フェーズを渡す）
-  const riskAssessment = useMemo(() => {
+  // リスク評価（フェーズ + タイプを渡す）
+  const handleAssessRisk = () => {
     const selectedDeliverables = deliverables.filter(d => d.isOptedIn);
-    return assessDeliverableSelectionRisk(
+    const result = assessDeliverableSelectionRisk(
       deliverables,
       selectedDeliverables,
-      phase
+      phase,
+      selectedType
     );
-  }, [deliverables, phase]);
+    setRiskAssessment(result);
+  };
+
+  useEffect(() => {
+    // 選択や絞り込みが変わったら前回の結果を無効化
+    setRiskAssessment(null);
+  }, [deliverables, phase, selectedType]);
+
 
   // 一覧の絞り込みに「フェーズ一致」を必須条件として追加
   const filteredDeliverables = useMemo(() => {
@@ -78,7 +86,6 @@ const Index = () => {
       const matchesSearch =
         deliverable.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
         deliverable.description.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesPriority = selectedPriority === 'all' || deliverable.priority === selectedPriority;
 
       // 既存のカテゴリフィルタは“追加フィルタ”として扱う（必要ならallにしておけばOK）
       const matchesCategory = selectedCategory === 'all' || deliverable.category === selectedCategory;
@@ -89,40 +96,40 @@ const Index = () => {
       return (
         matchesPhase &&
         matchesSearch &&
-        matchesPriority &&
         matchesCategory &&
         matchesType &&
         matchesOptIn
       );
     });
-  }, [deliverables, phase, searchTerm, selectedPriority, selectedCategory, selectedType, showOptedInOnly]);
+  }, [deliverables, phase, searchTerm, selectedCategory, selectedType, showOptedInOnly]);
 
   const handleToggleOptIn = (id: string, isOptedIn: boolean) => {
     setDeliverables(prev => {
       const updated = prev.map(d => (d.id === id ? { ...d, isOptedIn } : d));
-      
+
       // 選択されている成果物のIDリストを作成してURLを更新
       const selectedIds = updated.filter(d => d.isOptedIn).map(d => d.id);
       const newParams = new URLSearchParams(searchParams);
-      
+
       if (selectedIds.length > 0) {
         newParams.set('selected', selectedIds.join(','));
       } else {
         newParams.delete('selected');
       }
-      
+
       // deliverableパラメータは保持
       if (searchParams.get('deliverable')) {
         newParams.set('deliverable', searchParams.get('deliverable')!);
       }
-      
+
       setSearchParams(newParams);
-      
+
       return updated;
     });
   };
 
   const handleViewDetails = (deliverable: Deliverable) => {
+    setSearchParams({ deliverable: deliverable.id });
     const newParams = new URLSearchParams(searchParams);
     newParams.set('deliverable', deliverable.id);
     setSearchParams(newParams);
@@ -152,14 +159,6 @@ const Index = () => {
                 <BookOpenText className="h-4 w-4 mr-2" />
                 <Link to={`https://www.notion.so/278e8bc3d80d807695a2d7a2ec766aff?source=copy_link`}>Docs</Link>
               </Button>
-              {/* <Button variant="outline" size="sm">
-                <Download className="h-4 w-4 mr-2" />
-                エクスポート
-              </Button> */}
-              {/* <Button variant="outline" size="sm">
-                <Settings className="h-4 w-4 mr-2" />
-                設定
-              </Button> */}
             </div>
           </div>
         </div>
@@ -222,19 +221,6 @@ const Index = () => {
             </div>
           </div>
 
-          {/* 優先度フィルター */}
-          <Select value={selectedPriority} onValueChange={(value) => setSelectedPriority(value as PriorityType | 'all')}>
-            <SelectTrigger className="w-32">
-              <SelectValue placeholder="優先度" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">全ての優先度</SelectItem>
-              <SelectItem value="Must">Must</SelectItem>
-              <SelectItem value="Should">Should</SelectItem>
-              <SelectItem value="Could">Could</SelectItem>
-            </SelectContent>
-          </Select>
-
           {/* 選択中のみフィルター */}
           <Button
             variant={showOptedInOnly ? "default" : "outline"}
@@ -244,6 +230,16 @@ const Index = () => {
           >
             <Filter className="h-4 w-4 mr-1" />
             選択中のみ
+          </Button>
+
+          <Button
+            variant="default"
+            size="sm"
+            onClick={handleAssessRisk}
+            className="ml-auto"
+          >
+            <AlertTriangle className="h-4 w-4 mr-1" />
+            リスクを評価
           </Button>
 
           {/* 検索窓 */}
@@ -260,52 +256,39 @@ const Index = () => {
 
 
         {/* Risk Assessment Display */}
-        {riskAssessment && (
+        {riskAssessment && Object.keys(riskAssessment.missingByTitle).length > 0 ? (
           <div className="mb-6">
-            <Alert
-              className={`border-l-4 ${riskAssessment.overallRisk === 'high'
-                ? 'border-l-destructive'
-                : riskAssessment.overallRisk === 'medium'
-                  ? 'border-l-warning'
-                  : 'border-l-success'
-                }`}
-            >
+            <Alert className="border-l-4 border-l-warning">
               <AlertTriangle className="h-4 w-4" />
               <AlertDescription>
-                <div className="space-y-2">
+                <div className="space-y-3">
                   <div className="flex items-center gap-2">
                     <strong>プロジェクトリスク:</strong>
-                    <Badge
-                      className={
-                        riskAssessment.overallRisk === 'high'
-                          ? 'bg-destructive text-destructive-foreground'
-                          : riskAssessment.overallRisk === 'medium'
-                            ? 'bg-warning text-warning-foreground'
-                            : 'bg-success text-success-foreground'
-                      }
-                    >
-                      {riskAssessment.overallRisk === 'high'
-                        ? '高'
-                        : riskAssessment.overallRisk === 'medium'
-                          ? '中'
-                          : '低'}
-                    </Badge>
-                    {/* 追加: 今のフェーズを明示 */}
                     <span className="text-xs text-muted-foreground">
-                      （フェーズ: {phase}）
+                      （フェーズ: {phase} / タイプ: {selectedType === 'all' ? '全て' : selectedType === 'application' ? 'アプリ' : 'インフラ'}）
                     </span>
                   </div>
-                  {riskAssessment.recommendations.length > 0 && (
-                    <div className="text-sm">
-                      <strong>推奨:</strong>{' '}
-                      {riskAssessment.recommendations.join('、')}
-                    </div>
-                  )}
+
+                  {/* 箇条書き（各行の末尾に「未選択: タイトル」） */}
+                  <ul className="list-disc pl-5 text-sm space-y-1">
+                    {Object.entries(riskAssessment.missingByTitle).map(([title, line]) => (
+                      <li key={title}>
+                        {line}{' '}
+                        <span className="text-xs text-muted-foreground">（未選択: {title}）</span>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
               </AlertDescription>
             </Alert>
           </div>
-        )}
+        ) : riskAssessment && Object.keys(riskAssessment.missingByTitle).length === 0 && (<div className="mb-6">
+          <Alert className="border-l-4 border-l-green-600">
+            <AlertDescription className="text-sm">
+              現在の選択では、未選択に起因するリスクは検出されませんでした。
+            </AlertDescription>
+          </Alert>
+        </div>)}
 
 
         <div className="mt-6">
@@ -319,7 +302,6 @@ const Index = () => {
                 className="mt-2"
                 onClick={() => {
                   setSearchTerm('');
-                  setSelectedPriority('all');
                   setSelectedCategory('all');
                   setSelectedType('all');
                   setShowOptedInOnly(false);

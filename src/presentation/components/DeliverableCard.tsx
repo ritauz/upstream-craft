@@ -2,7 +2,7 @@ import { Card, CardContent, CardHeader } from '@/presentation/components/ui/card
 import { Badge } from '@/presentation/components/ui/badge';
 import { Button } from '@/presentation/components/ui/button';
 import { Switch } from '@/presentation/components/ui/switch';
-import { Deliverable, PriorityType } from '@/domain/entities/deliverable';
+import { Deliverable } from '@/domain/entities/deliverable';
 import { Eye, CheckSquare } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -11,19 +11,6 @@ interface DeliverableCardProps {
   onToggleOptIn: (id: string, isOptedIn: boolean) => void;
   onViewDetails: (deliverable: Deliverable) => void;
 }
-
-const getPriorityColor = (priority: PriorityType) => {
-  switch (priority) {
-    case 'Must':
-      return 'must';
-    case 'Should':
-      return 'should';
-    case 'Could':
-      return 'could';
-    default:
-      return 'muted';
-  }
-};
 
 export const DeliverableCard = ({
   deliverable,
@@ -46,15 +33,6 @@ export const DeliverableCard = ({
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-2">
-              <Badge
-                variant="secondary"
-                className={cn(
-                  "text-xs font-medium",
-                  `bg-${getPriorityColor(deliverable.priority)} text-${getPriorityColor(deliverable.priority)}-foreground`
-                )}
-              >
-                {deliverable.priority}
-              </Badge>
               <Badge variant="outline" className="text-xs">
                 {deliverable.category}
               </Badge>
@@ -137,16 +115,6 @@ export const DeliverableCard = ({
             <Eye className="h-3 w-3 mr-1" />
             詳細
           </Button>
-          {deliverable.checklist && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-7 text-xs"
-            >
-              <CheckSquare className="h-3 w-3 mr-1" />
-              チェックリスト
-            </Button>
-          )}
         </div>
       </CardContent>
     </Card>

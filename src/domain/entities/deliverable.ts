@@ -1,4 +1,3 @@
-export type PriorityType = 'Must' | 'Should' | 'Could';
 export type DeliverableType = 'application' | 'infrastructure';
 
 export interface Deliverable {
@@ -8,16 +7,12 @@ export interface Deliverable {
   purpose: string;
   requirements?: string;
   optionalRequirements?: string;
-  priority: PriorityType;
   category: string;
   type: DeliverableType[];
   templates: TemplateRef[];
-  checklist?: ChecklistItem[];
   isPhazeDlv: boolean;
   isOptedIn: boolean;
-  dependencies?: string[];
-  position?: { x: number; y: number };
-  risks?: DeliverableRisk[];
+  risks?: string;
 }
 
 export type TemplateFormat = 'MD' | 'MDX';
@@ -56,16 +51,8 @@ export interface TemplateSection {
   isSelected: boolean;
 }
 
-export interface ChecklistItem {
-  id: string;
-  text: string;
-  category: 'format' | 'content' | 'quality';
-  isChecked: boolean;
-}
-
 export interface DeliverableRisk {
   id: string;
-  level: 'low' | 'medium' | 'high';
   description: string;
   impact: string;
   mitigation?: string;
@@ -77,7 +64,6 @@ export interface UserPreferences {
 }
 
 export interface RiskAssessment {
-  overallRisk: 'low' | 'medium' | 'high';
   risks: DeliverableRisk[];
   recommendations: string[];
 }
