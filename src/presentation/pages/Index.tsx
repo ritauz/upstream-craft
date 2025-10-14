@@ -2,13 +2,14 @@ import { useState, useMemo, useEffect } from 'react';
 
 import { DeliverableCard } from '@/presentation/components/DeliverableCard';
 import { DeliverableModal } from '@/presentation/components/DeliverableModal';
+import { HowToUseModal } from '@/presentation/components/HowToUseModal';
 import { StatsCard } from '@/presentation/components/StatsCard';
 import { Badge } from '@/presentation/components/ui/badge';
 import { Button } from '@/presentation/components/ui/button';
 import { Alert, AlertDescription } from '@/presentation/components/ui/alert';
 import { deliverableRepository } from '@/infrastructure/repositories/deliverable-repository';
 import { Deliverable, DeliverableType } from '@/domain/entities/deliverable';
-import { FileSpreadsheet, Settings, Download, GitBranch, BookOpenText, AlertTriangle, Filter, Search } from 'lucide-react';
+import { FileSpreadsheet, Settings, Download, GitBranch, BookOpenText, AlertTriangle, Filter, Search, HelpCircle } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/presentation/components/ui/select';
 import { Input } from '@/presentation/components/ui/input';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
@@ -51,6 +52,7 @@ const Index = () => {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedType, setSelectedType] = useState<DeliverableType | 'all'>('all');
   const [showOptedInOnly, setShowOptedInOnly] = useState(false);
+  const [isHowToUseModalOpen, setIsHowToUseModalOpen] = useState(false);
   const [riskAssessment, setRiskAssessment] =
     useState<ReturnType<typeof assessDeliverableSelectionRisk> | null>(null);
 
@@ -155,6 +157,10 @@ const Index = () => {
               </div>
             </div>
             <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={() => setIsHowToUseModalOpen(true)}>
+                <HelpCircle className="h-4 w-4 mr-2" />
+                アプリの使い方
+              </Button>
               <Button variant="outline" size="sm">
                 <BookOpenText className="h-4 w-4 mr-2" />
                 <Link to={`https://www.notion.so/278e8bc3d80d807695a2d7a2ec766aff?source=copy_link`}>Docs</Link>
@@ -333,6 +339,12 @@ const Index = () => {
           allDeliverables={deliverables}
         />
       )}
+
+      {/* How To Use Modal */}
+      <HowToUseModal
+        isOpen={isHowToUseModalOpen}
+        onClose={() => setIsHowToUseModalOpen(false)}
+      />
     </div>);
 };
 export default Index;
