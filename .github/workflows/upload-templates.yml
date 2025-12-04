@@ -1,0 +1,108 @@
+name: Upload templates & Deploy to Vercel
+
+on:
+  push:
+    branches: [ main, staging ]
+    paths:
+      - 'content/templates/**'
+      - 'scripts/upload-templates.ts'
+      - 'package.json'
+      - 'src/**'
+      - 'vite.config.*'
+  workflow_dispatch:
+
+jobs:
+  upload-templates:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install deps
+        run: npm ci
+
+      - name: Build uploader script
+        run: npm run -s build:script
+
+      - name: Debug dist
+        run: ls -R dist || true
+
+      # ブランチに応じて別ストレージへアップロード（トークンとmanifest URLを切替）
+      - name: Upload templates to Vercel Blob
+        run: node dist/scripts/upload-templates.js
+        env:
+          # 別ストレージ用のRWトークン
+          BLOB_READ_WRITE_TOKEN: ${{ github.ref == 'refs/heads/staging' && secrets.STG_BLOB_READ_WRITE_TOKEN || secrets.BLOB_READ_WRITE_TOKEN }}
+          PUBLIC_ACCESS: 'true'
+          # 既存manifest（同一ストア内の公開URL）
+          TPL_MANIFEST_URL: ${{ github.ref == 'refs/heads/staging' && secrets.STG_TPL_MANIFEST_URL || secrets.TPL_MANIFEST_URL }}
+
+  deploy-preview:
+    needs: upload-templates
+    if: github.ref == 'refs/heads/staging'
+    runs-on: ubuntu-latest
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install deps
+        run: npm ci
+
+      - name: Pull Vercel Project Settings (preview)
+        run: npx vercel pull --yes --environment=preview --token $VERCEL_TOKEN
+
+      - name: Build (preview)
+        run: npx vercel build --token "$VERCEL_TOKEN" --scope "$VERCEL_ORG_ID"
+
+      - name: Deploy (preview)
+        run: |
+          set -euo pipefail
+          npx vercel deploy --prebuilt --yes --token "$VERCEL_TOKEN" --scope "$VERCEL_ORG_ID" | tee deploy.log
+          url=$(grep -oE 'https://[a-zA-Z0-9.-]+\.vercel\.app' deploy.log | tail -n1)
+          [ -n "$url" ] || { echo "URL not found in CLI output"; cat deploy.log; exit 1; }
+          echo "URL=$url" >> "$GITHUB_ENV"
+          echo "Resolved URL: $url"
+
+      - name: Alias latest preview
+        run: |
+          set -euo pipefail
+          [ -n "${URL:-}" ] || { echo "URL env not set"; exit 1; }
+          npx vercel alias set "$URL" stg-std-template.vercel.app --token $VERCEL_TOKEN --scope $VERCEL_ORG_ID
+
+ 
+  deploy-production:
+    needs: upload-templates
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install deps
+        run: npm ci
+
+      - name: Pull Vercel Project Settings (production)
+        run: npx vercel pull --yes --environment=production --token $VERCEL_TOKEN
+
+      - name: Build (production)
+        run: npx vercel build --prod --token $VERCEL_TOKEN
+
+      - name: Deploy (production)
+        run: npx vercel deploy --prebuilt --prod --yes --token $VERCEL_TOKEN

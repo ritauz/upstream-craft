@@ -2,13 +2,14 @@
 export const sanitizeSchema = {
   tagNames: [
     'a', 'b', 'i', 'em', 'strong', 'p', 'ul', 'ol', 'li', 'code', 'pre', 'hr', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
-    'table', 'thead', 'tbody', 'tr', 'th', 'td', 'aside', 'blockquote'
+    'table', 'thead', 'tbody', 'tr', 'th', 'td', 'aside', 'blockquote', 'img'
   ],
   attributes: {
     a: ['href', 'title', 'target', 'rel'],
     th: ['colspan', 'rowspan', 'align'],
     td: ['colspan', 'rowspan', 'align'],
     table: ['align'],
-    aside: ['className']
+    aside: ['className'],
+    img: ['src', 'alt', 'title', 'width', 'height', 'loading', 'decoding'],
   }
 };

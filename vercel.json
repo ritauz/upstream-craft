@@ -1,0 +1,27 @@
+{
+  "rewrites": [
+    {
+      "source": "/blob/prod/:path*",
+      "destination": "https://mbprfxioi0tsu2wx.public.blob.vercel-storage.com/:path*"
+    },
+    {
+      "source": "/blob/stg/:path*",
+      "destination": "https://ajpjlqzdlqwf9eam.public.blob.vercel-storage.com/:path*"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/blob/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-store, must-revalidate"
+        },
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        }
+      ]
+    }
+  ]
+}

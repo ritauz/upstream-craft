@@ -29,10 +29,11 @@ export const HowToUseModal = ({ isOpen, onClose }: HowToUseModalProps) => {
               <ol className="list-decimal list-inside space-y-1 pl-2">
                 <li>成果物カードの<strong>「詳細」</strong>ボタンをクリック</li>
                 <li>モーダル内の<strong>「表示」</strong>ボタンをクリック</li>
-                <li>表示されたマークダウンテンプレートをコピーして使用</li>
+                <li>表示されたマークダウンテンプレートをコピーする</li>
+                <li>プロジェクトで使用しているドキュメントツール（Markdown対応）に貼りつけて使用</li>
               </ol>
               <p className="pt-2 text-xs">
-                💡 テンプレートはプロジェクトのニーズに合わせて自由にカスタマイズできます
+                💡 テンプレートはプロジェクトのニーズに合わせて自由にカスタマイズしてください
               </p>
             </div>
           </div>
@@ -48,23 +49,9 @@ export const HowToUseModal = ({ isOpen, onClose }: HowToUseModalProps) => {
               <ol className="list-decimal list-inside space-y-1 pl-2">
                 <li>各フェーズ（要件定義・基本設計）を選択</li>
                 <li>成果物カード右上の<strong>スイッチ</strong>で必要な成果物を選択</li>
-                <li><strong>「リスクを評価」</strong>ボタンをクリック</li>
+                <li><strong>「リスクを表示」</strong>ボタンをクリック</li>
                 <li>選択した成果物に基づくプロジェクトリスクが表示されます</li>
               </ol>
-            </div>
-          </div>
-
-          {/* リスク評価 */}
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-primary" />
-              <h3 className="text-lg font-semibold">リスク評価機能</h3>
-            </div>
-            <div className="pl-7 space-y-2 text-sm text-muted-foreground">
-              <p>
-                選択した成果物の組み合わせに基づき、プロジェクトに潜むリスクを自動的に評価します。
-                未選択の重要な成果物がある場合、警告メッセージが表示されます。
-              </p>
             </div>
           </div>
 

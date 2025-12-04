@@ -3,16 +3,13 @@ import { useState, useMemo, useEffect } from 'react';
 import { DeliverableCard } from '@/presentation/components/DeliverableCard';
 import { DeliverableModal } from '@/presentation/components/DeliverableModal';
 import { HowToUseModal } from '@/presentation/components/HowToUseModal';
-import { StatsCard } from '@/presentation/components/StatsCard';
-import { Badge } from '@/presentation/components/ui/badge';
 import { Button } from '@/presentation/components/ui/button';
 import { Alert, AlertDescription } from '@/presentation/components/ui/alert';
 import { deliverableRepository } from '@/infrastructure/repositories/deliverable-repository';
 import { Deliverable, DeliverableType } from '@/domain/entities/deliverable';
-import { FileSpreadsheet, Settings, Download, GitBranch, BookOpenText, AlertTriangle, Filter, Search, HelpCircle } from 'lucide-react';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/presentation/components/ui/select';
+import { FileSpreadsheet, BookOpenText, AlertTriangle, Filter, Search, HelpCircle } from 'lucide-react';
 import { Input } from '@/presentation/components/ui/input';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { assessDeliverableSelectionRisk } from '@/application/usecases/assess-deliverable-risk';
 
 type Phase = '要件定義' | '基本設計';
@@ -20,38 +17,61 @@ type Phase = '要件定義' | '基本設計';
 const Index = () => {
   const [searchParams, setSearchParams] = useSearchParams();
 
-  // URLパラメータから選択されている成果物のIDリストを取得
+  // --- URL<->State 変換ヘルパ ---
+  const PhaseToParam = { '要件定義': 'req', '基本設計': 'des' } as const;
+  const ParamToPhase: Record<string, Phase> = { req: '要件定義', des: '基本設計' };
+
+  const TypeToParam = { application: 'app', infrastructure: 'infra', all: 'all' } as const;
+  const ParamToType: Record<string, DeliverableType | 'all'> = { app: 'application', infra: 'infrastructure', all: 'all' };
+
+  const boolFromParam = (v: string | null) => v === '1';
+  const boolToParam = (v: boolean) => (v ? '1' : null);
+
+  // URL パラメータ → 初期値復元
   const selectedIdsFromUrl = useMemo(() => {
     const selectedParam = searchParams.get('selected');
-    return selectedParam ? selectedParam.split(',') : [];
+    return selectedParam ? selectedParam.split(',').filter(Boolean) : [];
   }, [searchParams]);
 
-  // deliverableの初期状態をURLパラメータから復元
+  const phaseFromUrl: Phase = (() => {
+    const p = searchParams.get('phase');
+    return p && ParamToPhase[p] ? ParamToPhase[p] : '要件定義';
+  })();
+
+  const typeFromUrl: DeliverableType | 'all' = (() => {
+    const t = searchParams.get('type');
+    return t && ParamToType[t] ? ParamToType[t] : 'all';
+  })();
+
+  const onlyFromUrl: boolean = boolFromParam(searchParams.get('only'));
+
+  // deliverable 初期化（isPhazeDlv は常時 ON）
   const [deliverables, setDeliverables] = useState(() => {
     const allDeliverables = deliverableRepository.getAll();
     return allDeliverables.map(d => ({
       ...d,
-      isOptedIn: selectedIdsFromUrl.includes(d.id)
+      isOptedIn: selectedIdsFromUrl.includes(d.id) || d.isPhazeDlv === true,
     }));
   });
 
-  // URLパラメータが変更されたら選択状態を同期
+  // URLの変更に追従（外部遷移や戻る進むにも耐える）
   useEffect(() => {
     setDeliverables(prev =>
       prev.map(d => ({
         ...d,
         isOptedIn: selectedIdsFromUrl.includes(d.id) || d.isPhazeDlv === true,
-      }))
+      })),
     );
-  }, [selectedIdsFromUrl]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams, selectedIdsFromUrl]);
 
-  // 追加: フェーズ選択（初期値は要件定義）
-  const [phase, setPhase] = useState<Phase>('要件定義');
-
+  // UI 状態
+  const [phase, setPhase] = useState<Phase>(phaseFromUrl);
+  const [showRisk, setShowRisk] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
-  const [selectedType, setSelectedType] = useState<DeliverableType | 'all'>('all');
-  const [showOptedInOnly, setShowOptedInOnly] = useState(false);
+  const [selectedType, setSelectedType] = useState<DeliverableType | 'all'>(typeFromUrl);
+  const [showOptedInOnly, setShowOptedInOnly] = useState<boolean>(onlyFromUrl);
   const [isHowToUseModalOpen, setIsHowToUseModalOpen] = useState(false);
   const [riskAssessment, setRiskAssessment] =
     useState<ReturnType<typeof assessDeliverableSelectionRisk> | null>(null);
@@ -63,8 +83,33 @@ const Index = () => {
     return deliverables.find(d => d.id === selectedDeliverableId) || null;
   }, [selectedDeliverableId, deliverables]);
 
-  // リスク評価（フェーズ + タイプを渡す）
-  const handleAssessRisk = () => {
+  // URL ⇄ state 双方向同期（phase/type/only）
+  useEffect(() => {
+    const p = searchParams.get('phase');
+    if (p && ParamToPhase[p] && ParamToPhase[p] !== phase) setPhase(ParamToPhase[p]);
+
+    const t = searchParams.get('type');
+    if (t && ParamToType[t] && ParamToType[t] !== selectedType) setSelectedType(ParamToType[t]);
+
+    const o = boolFromParam(searchParams.get('only'));
+    if (o !== showOptedInOnly) setShowOptedInOnly(o);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
+
+  // URL 更新ユーティリティ（replace で履歴汚染を抑制）
+  const updateParams = (updater: (p: URLSearchParams) => void, replace = true) => {
+    const p = new URLSearchParams(searchParams);
+    updater(p);
+    for (const [k, v] of Array.from(p.entries())) if (!v) p.delete(k);
+    setSearchParams(p, { replace });
+  };
+
+  // リスク表示（フェーズ + タイプを渡す）
+  useEffect(() => {
+    if (!showRisk) {
+      setRiskAssessment(null);
+      return;
+    }
     const selectedDeliverables = deliverables.filter(d => d.isOptedIn);
     const result = assessDeliverableSelectionRisk(
       deliverables,
@@ -73,25 +118,16 @@ const Index = () => {
       selectedType
     );
     setRiskAssessment(result);
-  };
+  }, [deliverables, phase, selectedType, showRisk]);
 
-  useEffect(() => {
-    // 選択や絞り込みが変わったら前回の結果を無効化
-    setRiskAssessment(null);
-  }, [deliverables, phase, selectedType]);
-
-
-  // 一覧の絞り込みに「フェーズ一致」を必須条件として追加
+  // 一覧の絞り込み（フェーズ一致必須）
   const filteredDeliverables = useMemo(() => {
     return deliverables.filter(deliverable => {
       const matchesPhase = deliverable.category === phase;
       const matchesSearch =
         deliverable.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
         deliverable.description.toLowerCase().includes(searchTerm.toLowerCase());
-
-      // 既存のカテゴリフィルタは“追加フィルタ”として扱う（必要ならallにしておけばOK）
       const matchesCategory = selectedCategory === 'all' || deliverable.category === selectedCategory;
-
       const matchesType = selectedType === 'all' || deliverable.type.includes(selectedType);
       const matchesOptIn = !showOptedInOnly || deliverable.isOptedIn;
 
@@ -105,42 +141,53 @@ const Index = () => {
     });
   }, [deliverables, phase, searchTerm, selectedCategory, selectedType, showOptedInOnly]);
 
+  // 選択切替で URL の selected を更新
   const handleToggleOptIn = (id: string, isOptedIn: boolean) => {
     setDeliverables(prev => {
       const updated = prev.map(d => (d.id === id ? { ...d, isOptedIn } : d));
-
-      // 選択されている成果物のIDリストを作成してURLを更新
       const selectedIds = updated.filter(d => d.isOptedIn).map(d => d.id);
-      const newParams = new URLSearchParams(searchParams);
 
-      if (selectedIds.length > 0) {
-        newParams.set('selected', selectedIds.join(','));
-      } else {
-        newParams.delete('selected');
-      }
+      updateParams(p => {
+        if (selectedIds.length) p.set('selected', selectedIds.join(','));
+        else p.delete('selected');
 
-      // deliverableパラメータは保持
-      if (searchParams.get('deliverable')) {
-        newParams.set('deliverable', searchParams.get('deliverable')!);
-      }
-
-      setSearchParams(newParams);
+        // deliverable は維持
+        const cur = searchParams.get('deliverable');
+        if (cur) p.set('deliverable', cur);
+      });
 
       return updated;
     });
   };
 
+  // 詳細モーダル開閉で URL を更新
   const handleViewDetails = (deliverable: Deliverable) => {
-    setSearchParams({ deliverable: deliverable.id });
-    const newParams = new URLSearchParams(searchParams);
-    newParams.set('deliverable', deliverable.id);
-    setSearchParams(newParams);
+    updateParams(p => p.set('deliverable', deliverable.id));
   };
 
   const handleCloseModal = () => {
-    const newParams = new URLSearchParams(searchParams);
-    newParams.delete('deliverable');
-    setSearchParams(newParams);
+    updateParams(p => p.delete('deliverable'));
+  };
+
+  // フェーズ/タイプ/選択中のみ を URL と同期させるセット関数
+  const setPhaseAndUrl = (next: Phase) => {
+    setPhase(next);
+    updateParams(p => p.set('phase', PhaseToParam[next]));
+  };
+
+  const setTypeAndUrl = (next: DeliverableType | 'all') => {
+    setSelectedType(next);
+    updateParams(p => p.set('type', TypeToParam[next]));
+  };
+
+  const toggleOnlyAndUrl = () => {
+    const next = !showOptedInOnly;
+    setShowOptedInOnly(next);
+    updateParams(p => {
+      const v = boolToParam(next);
+      if (v) p.set('only', v);
+      else p.delete('only');
+    });
   };
 
   return (
@@ -163,7 +210,9 @@ const Index = () => {
               </Button>
               <Button variant="outline" size="sm">
                 <BookOpenText className="h-4 w-4 mr-2" />
-                <Link to={`https://www.notion.so/278e8bc3d80d807695a2d7a2ec766aff?source=copy_link`}>Docs</Link>
+                <a href={import.meta.env.VITE_GUIDE_URL} target="_blank" rel="noopener noreferrer">
+                  Docs
+                </a>
               </Button>
             </div>
           </div>
@@ -181,18 +230,14 @@ const Index = () => {
               <Button
                 variant={phase === '要件定義' ? 'default' : 'ghost'}
                 size="sm"
-                onClick={() => {
-                  setPhase('要件定義');
-                }}
+                onClick={() => setPhaseAndUrl('要件定義')}
               >
                 要件定義
               </Button>
               <Button
                 variant={phase === '基本設計' ? 'default' : 'ghost'}
                 size="sm"
-                onClick={() => {
-                  setPhase('基本設計');
-                }}
+                onClick={() => setPhaseAndUrl('基本設計')}
               >
                 基本設計
               </Button>
@@ -206,21 +251,21 @@ const Index = () => {
               <Button
                 variant={selectedType === 'application' ? 'default' : 'ghost'}
                 size="sm"
-                onClick={() => setSelectedType('application')}
+                onClick={() => setTypeAndUrl('application')}
               >
                 アプリ
               </Button>
               <Button
                 variant={selectedType === 'infrastructure' ? 'default' : 'ghost'}
                 size="sm"
-                onClick={() => setSelectedType('infrastructure')}
+                onClick={() => setTypeAndUrl('infrastructure')}
               >
                 インフラ
               </Button>
               <Button
                 variant={selectedType === 'all' ? 'default' : 'ghost'}
                 size="sm"
-                onClick={() => setSelectedType('all')}
+                onClick={() => setTypeAndUrl('all')}
               >
                 全て
               </Button>
@@ -229,9 +274,9 @@ const Index = () => {
 
           {/* 選択中のみフィルター */}
           <Button
-            variant={showOptedInOnly ? "default" : "outline"}
+            variant={showOptedInOnly ? 'default' : 'outline'}
             size="sm"
-            onClick={() => setShowOptedInOnly(!showOptedInOnly)}
+            onClick={toggleOnlyAndUrl}
             className="whitespace-nowrap"
           >
             <Filter className="h-4 w-4 mr-1" />
@@ -239,13 +284,13 @@ const Index = () => {
           </Button>
 
           <Button
-            variant="default"
+            variant={showRisk ? 'default' : 'outline'}
             size="sm"
-            onClick={handleAssessRisk}
+            onClick={() => setShowRisk(prev => !prev)}
             className="ml-auto"
           >
             <AlertTriangle className="h-4 w-4 mr-1" />
-            リスクを評価
+            {showRisk ? 'リスク表示中' : 'リスクを表示'}
           </Button>
 
           {/* 検索窓 */}
@@ -260,9 +305,8 @@ const Index = () => {
           </div>
         </div>
 
-
         {/* Risk Assessment Display */}
-        {riskAssessment && Object.keys(riskAssessment.missingByTitle).length > 0 ? (
+        {showRisk && riskAssessment && Object.keys(riskAssessment.missingByTitle).length > 0 ? (
           <div className="mb-6">
             <Alert className="border-l-4 border-l-warning">
               <AlertTriangle className="h-4 w-4" />
@@ -274,8 +318,6 @@ const Index = () => {
                       （フェーズ: {phase} / タイプ: {selectedType === 'all' ? '全て' : selectedType === 'application' ? 'アプリ' : 'インフラ'}）
                     </span>
                   </div>
-
-                  {/* 箇条書き（各行の末尾に「未選択: タイトル」） */}
                   <ul className="list-disc pl-5 text-sm space-y-1">
                     {Object.entries(riskAssessment.missingByTitle).map(([title, line]) => (
                       <li key={title}>
@@ -288,14 +330,15 @@ const Index = () => {
               </AlertDescription>
             </Alert>
           </div>
-        ) : riskAssessment && Object.keys(riskAssessment.missingByTitle).length === 0 && (<div className="mb-6">
-          <Alert className="border-l-4 border-l-green-600">
-            <AlertDescription className="text-sm">
-              現在の選択では、未選択に起因するリスクは検出されませんでした。
-            </AlertDescription>
-          </Alert>
-        </div>)}
-
+        ) : showRisk && riskAssessment && Object.keys(riskAssessment.missingByTitle).length === 0 && (
+          <div className="mb-6">
+            <Alert className="border-l-4 border-l-green-600">
+              <AlertDescription className="text-sm">
+                現在の選択では、未選択に起因するリスクは検出されませんでした。
+              </AlertDescription>
+            </Alert>
+          </div>
+        )}
 
         <div className="mt-6">
           {filteredDeliverables.length === 0 ? (
@@ -311,6 +354,10 @@ const Index = () => {
                   setSelectedCategory('all');
                   setSelectedType('all');
                   setShowOptedInOnly(false);
+                  updateParams(p => {
+                    p.delete('type');
+                    p.delete('only');
+                  }, true);
                 }}
               >
                 フィルターをリセット
@@ -345,6 +392,8 @@ const Index = () => {
         isOpen={isHowToUseModalOpen}
         onClose={() => setIsHowToUseModalOpen(false)}
       />
-    </div>);
+    </div>
+  );
 };
+
 export default Index;

@@ -5,7 +5,7 @@ export interface Deliverable {
   title: string;
   description: string;
   purpose: string;
-  requirements?: string;
+  activity?: string[];
   optionalRequirements?: string;
   category: string;
   type: DeliverableType[];
@@ -13,6 +13,7 @@ export interface Deliverable {
   isPhazeDlv: boolean;
   isOptedIn: boolean;
   risks?: string;
+  guideLink?: string;
 }
 
 export type TemplateFormat = 'MD' | 'MDX';

@@ -20,8 +20,6 @@ const normalizeRisk = (d: Deliverable): string => {
   if (typeof r === 'string' && r.trim().length > 0) {
     return r.trim();
   }
-  // 保険: データ未設定でも黙らない
-  return `${d.title} が未選択のため、${d.purpose || '必要な前提'}が不明確なまま進行する可能性があります。`;
 };
 
 // 返り値はシンプルな一文ずつ
@@ -41,7 +39,7 @@ export const assessDeliverableSelectionRisk = (
   const missing = allDeliverables.filter(d =>
     trim(d.category) === trim(category) &&
     typeMatches(d) &&
-    !selectedIds.has(d.id)
+    !selectedIds.has(d.id) && d.risks
   );
 
   const risks: string[] = [];

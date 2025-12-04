@@ -5,7 +5,7 @@ import {
 import { Badge } from '@/presentation/components/ui/badge';
 import { Button } from '@/presentation/components/ui/button';
 import { Separator } from '@/presentation/components/ui/separator';
-import { FileText, Target, CheckSquare, Copy, Eye, Loader2 } from 'lucide-react';
+import { FileText, Target, CheckSquare, Copy, Eye, Loader2, ExternalLink } from 'lucide-react';
 import { useState } from 'react';
 import { useToast } from '@/presentation/hooks/use-toast';
 import { ScrollArea } from '@/presentation/components/ui/scroll-area';
@@ -14,23 +14,17 @@ import rehypeSanitize from 'rehype-sanitize';
 import { sanitizeSchema } from '@/infrastructure/utils/md-schema';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
+
+import { listRevisions, getLatestRevision } from '@/infrastructure/content/manifest';
 import { loadTemplateBody } from '@/infrastructure/content/template-loader';
 
-interface DeliverableModalProps {
-  deliverable: Deliverable;
-  onClose: () => void;
-  allDeliverables: Deliverable[]; // 依存関係の名前解決のために追加
-}
-
-/** 優先度バッジ色 */
-const getPriorityColor = (priority: string) => {
-  switch (priority) {
-    case 'Must': return 'bg-destructive text-destructive-foreground';
-    case 'Should': return 'bg-warning text-warning-foreground';
-    case 'Could': return 'bg-success text-success-foreground';
-    default: return 'bg-secondary text-secondary-foreground';
-  }
-};
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem
+} from '@/presentation/components/ui/select';
 
 /** フォーマット別アイコン */
 const getFormatIcon = (format: string) => {
@@ -44,17 +38,56 @@ const getFormatIcon = (format: string) => {
   }
 };
 
-export const DeliverableModal = ({ deliverable, onClose, allDeliverables }: DeliverableModalProps) => {
-  const [viewTemplate, setViewTemplate] = useState<{ name: string; content: string } | null>(null);
-  const [isFetching, setIsFetching] = useState<string | null>(null); // template.id を入れる
+// 最新（latest）と一致するリビジョンにだけ "Current (...)" を付ける
+const toRevisionLabel = (rev: string, latest: string) =>
+  rev === latest ? `Current (${rev})` : rev;
+
+interface DeliverableModalProps {
+  deliverable: Deliverable;
+  onClose: () => void;
+  allDeliverables: Deliverable[]; // 未使用だが型互換のため残置
+}
+
+export const DeliverableModal = ({ deliverable, onClose }: DeliverableModalProps) => {
+  // テンプレプレビュー用の状態
+  const [viewTemplate, setViewTemplate] = useState<{
+    id: string;
+    name: string;
+    content: string;
+    revisions: string[];       // 古い→新しい順
+    selectedRevision: string;  // 現在選択中
+    latestRevision: string;    // 最新
+  } | null>(null);
+
+  // 「表示」押下のスピナー制御
+  const [isFetching, setIsFetching] = useState<string | null>(null);
+
   const { toast } = useToast();
 
-  /** テンプレ選択時のアクション：Blob（manifest 経由）から本文取得して表示 */
+  /** 「表示」押下時: リビジョン一覧→最新→本文ロード */
   const handleTemplateAction = async (template: TemplateRef) => {
     try {
       setIsFetching(template.id);
-      const content = await loadTemplateBody(template.contentRef.key);
-      setViewTemplate({ name: template.name, content });
+      const isLocal = import.meta.env.VITE_TPL_SOURCE === 'local';
+
+      // 1) 全リビジョン（古い→新しい）を取得
+      const revisions = isLocal ? ['Revyyyy.mm.dd hh:mm'] : await listRevisions(template.id);
+      if (!revisions.length) throw new Error('リビジョンが見つかりません');
+
+      // 2) 最新リビジョンを取得（念のためAPIで最新を確定）
+      const latest = isLocal ? 'Revyyyy.mm.dd hh:mm' : await getLatestRevision(template.id);
+
+      // 3) 最新で本文取得
+      const content = await loadTemplateBody(template.id, { revision: latest });
+
+      setViewTemplate({
+        id: template.id,
+        name: template.name,
+        content,
+        revisions,
+        selectedRevision: latest,
+        latestRevision: latest
+      });
     } catch (e: any) {
       toast({
         title: 'テンプレート取得に失敗しました',
@@ -66,58 +99,78 @@ export const DeliverableModal = ({ deliverable, onClose, allDeliverables }: Deli
     }
   };
 
-  /** 後方互換の自動生成テンプレ（contentRef がない異常系用） */
-  const generateTemplateContent = (templateName: string) => {
-    return `# ${templateName}
-
-成果物: ${deliverable.title}
-
-## 概要
-${deliverable.description}
-
-## 目的
-${deliverable.purpose}
-
-${deliverable.requirements ? `## 記載要件
-${deliverable.requirements}` : ''}
-
----
-このテンプレートを使用して${deliverable.title}を作成してください。
-`;
-  };
-
-  /** クリップボードコピー */
-  const handleCopyTemplate = () => {
-    if (viewTemplate) {
-      navigator.clipboard.writeText(viewTemplate.content);
+  /** リビジョン変更時: 本文を差し替え */
+  const handleChangeRevision = async (nextRev: string) => {
+    if (!viewTemplate) return;
+    try {
+      const content = await loadTemplateBody(viewTemplate.id, { revision: nextRev });
+      // latest は listRevisions の末尾でも良いが、念のため state の latestRevision を維持
+      setViewTemplate({
+        ...viewTemplate,
+        content,
+        selectedRevision: nextRev
+      });
+    } catch (e: any) {
       toast({
-        title: 'コピーしました',
-        description: 'テンプレートがクリップボードにコピーされました。'
+        title: 'テンプレート取得に失敗しました',
+        description: e?.message ?? '不明なエラーです',
+        variant: 'destructive'
       });
     }
   };
 
-  /** 依存成果物のタイトル解決 */
-  const getDependencyTitle = (depId: string) => {
-    const dep = allDeliverables.find(d => d.id === depId);
-    return dep ? dep.title : depId;
+  /** クリップボードコピー（画像はプレースホルダ化） */
+  const mdForCopy = (md: string) =>
+    md.replace(/!\[([^\]]*)\]\(\s*([^)\s]+)(?:\s+"[^"]*")?\s*\)/g, `> ここに画像を挿入`);
+
+  const handleCopyTemplate = () => {
+    if (!viewTemplate) return;
+    const out = mdForCopy(viewTemplate.content);
+    navigator.clipboard.writeText(out);
+    toast({
+      title: 'コピーしました',
+      description: 'テンプレートがクリップボードにコピーされました。'
+    });
   };
 
   return (
     <Dialog open={true} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
-          <div className="flex items-center gap-3 mb-2">
-            <DialogTitle className="text-xl font-bold">
-              {deliverable.title}
-            </DialogTitle>
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 mb-2">
+            {/* 左側: タイトルとカテゴリ */}
+            <div>
+              <DialogTitle className="text-xl font-bold mb-1">
+                {deliverable.title}
+              </DialogTitle>
+              <DialogDescription asChild>
+                <Badge variant="outline" className="w-fit">
+                  {deliverable.category}
+                </Badge>
+              </DialogDescription>
+            </div>
+
+            {/* 右側: 実践ガイドボタン */}
+            {deliverable.guideLink && (
+              <Button
+                asChild
+                size="sm"
+                className="shadow-sm ml-auto sm:mt-0 mt-2 m-4"
+              >
+                <a
+                  href={deliverable.guideLink as string}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="実践ガイドを新しいタブで開く"
+                >
+                  <ExternalLink className="mr-2 h-4 w-4" />
+                  実践ガイド
+                </a>
+              </Button>
+            )}
           </div>
-          <DialogDescription asChild>
-            <Badge variant="outline" className="w-fit">
-              {deliverable.category}
-            </Badge>
-          </DialogDescription>
         </DialogHeader>
+
 
         <div className="space-y-6">
           {/* 概要 */}
@@ -143,15 +196,21 @@ ${deliverable.requirements}` : ''}
           </div>
 
           {/* 要件 */}
-          {deliverable.requirements && (
+          {deliverable.activity && (
             <div>
               <h3 className="flex items-center gap-2 font-semibold text-foreground mb-2">
                 <CheckSquare className="w-4 h-4" />
-                記載要件
+                主な活動
               </h3>
-              <p className="text-muted-foreground leading-relaxed">
-                {deliverable.requirements}
-              </p>
+              <ul className="list-disc pl-5 text-sm space-y-1">
+                {deliverable.activity.map((act) =>
+                (<li>
+                  <p className="text-muted-foreground leading-relaxed">
+                    {act}
+                  </p>
+                </li>)
+                )}
+              </ul>
             </div>
           )}
 
@@ -179,9 +238,6 @@ ${deliverable.requirements}` : ''}
                         </div>
                         <div className="text-sm text-muted-foreground">
                           {template.format}形式
-                          {template.hasSample && (
-                            <span className="ml-2 text-primary">• サンプル付き</span>
-                          )}
                         </div>
                       </div>
                     </div>
@@ -217,23 +273,46 @@ ${deliverable.requirements}` : ''}
           <DialogContent className="max-w-3xl max-h-[80vh]">
             <DialogHeader>
               <DialogTitle className="flex items-center justify-between">
-                <span>{viewTemplate.name}</span>
+                {/* 左: テンプレ名 */}
+                <span className="truncate">{viewTemplate.name}</span>
+
+                {/* 右: コピー */}
                 <Button size="sm" onClick={handleCopyTemplate} className="flex items-center gap-2 m-2">
                   <Copy className="w-4 h-4" />
                   コピー
                 </Button>
               </DialogTitle>
-              <DialogDescription>
-                テンプレートの内容を確認し、コピーボタンでクリップボードにコピーできます。
+
+              <DialogDescription className="flex items-center gap-3 flex-wrap">
+                {/* リビジョン選択 */}
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-muted-foreground">リビジョン</span>
+                  <Select
+                    value={viewTemplate.selectedRevision}
+                    onValueChange={(v) => handleChangeRevision(v)}
+                  >
+                    <SelectTrigger className="w-[280px]">
+                      <SelectValue placeholder="リビジョンを選択" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {viewTemplate.revisions.map((rev) => (
+                        <SelectItem key={rev} value={rev}>
+                          {toRevisionLabel(rev, viewTemplate.latestRevision)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </DialogDescription>
             </DialogHeader>
 
+            {/* 本文プレビュー */}
             <ScrollArea className="h-[60vh] w-full rounded-md border p-4 prose prose-sm dark:prose-invert">
               <ReactMarkdown
                 remarkPlugins={[remarkGfm]}
                 rehypePlugins={[
-                  [rehypeSanitize, sanitizeSchema], // sanitize を必ず先に
-                  rehypeRaw                           // その後 raw を許可（スキーマで制御）
+                  [rehypeSanitize, sanitizeSchema],
+                  rehypeRaw,
                 ]}
               >
                 {viewTemplate.content}
@@ -242,7 +321,6 @@ ${deliverable.requirements}` : ''}
           </DialogContent>
         </Dialog>
       )}
-
     </Dialog>
   );
 };
