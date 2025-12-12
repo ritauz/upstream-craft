@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./presentation/pages/Index";
 import NotFound from "./presentation/pages/NotFound";
 import Docs from "./presentation/pages/Docs";
+import AdminTemplateVersionEditor from "./presentation/pages/AdminTemplateVersionEditor";
 
 import { AuthenticatedTemplate, UnauthenticatedTemplate } from "@azure/msal-react";
 import { useAuth } from "@/presentation/hooks/useAuth";
@@ -44,6 +45,10 @@ const App = () => {
               <Routes>
                 {/* 必要なら Index 側で isAdmin を受け取って編集UIの表示制御に使う */}
                 <Route path="/" element={<Index isAdmin={isAdmin} />} />
+                <Route
+                  path="/admin/templates/version-editor"
+                  element={isAdmin ? <AdminTemplateVersionEditor /> : <NotFound />}
+                />
                 {/* <Route path="/docs/*" element={<Docs />} /> */}
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
