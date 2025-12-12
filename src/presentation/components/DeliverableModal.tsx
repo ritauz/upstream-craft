@@ -15,16 +15,7 @@ import { sanitizeSchema } from '@/infrastructure/utils/md-schema';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
 
-import { listRevisions, getLatestRevision } from '@/infrastructure/content/manifest';
 import { loadTemplateBody } from '@/infrastructure/content/template-loader';
-
-import {
-  Select,
-  SelectTrigger,
-  SelectValue,
-  SelectContent,
-  SelectItem
-} from '@/presentation/components/ui/select';
 
 /** フォーマット別アイコン */
 const getFormatIcon = (format: string) => {
@@ -38,10 +29,6 @@ const getFormatIcon = (format: string) => {
   }
 };
 
-// 最新（latest）と一致するリビジョンにだけ "Current (...)" を付ける
-const toRevisionLabel = (rev: string, latest: string) =>
-  rev === latest ? `Current (${rev})` : rev;
-
 interface DeliverableModalProps {
   deliverable: Deliverable;
   onClose: () => void;
@@ -54,9 +41,6 @@ export const DeliverableModal = ({ deliverable, onClose }: DeliverableModalProps
     id: string;
     name: string;
     content: string;
-    revisions: string[];       // 古い→新しい順
-    selectedRevision: string;  // 現在選択中
-    latestRevision: string;    // 最新
   } | null>(null);
 
   // 「表示」押下のスピナー制御
@@ -64,58 +48,26 @@ export const DeliverableModal = ({ deliverable, onClose }: DeliverableModalProps
 
   const { toast } = useToast();
 
-  /** 「表示」押下時: リビジョン一覧→最新→本文ロード */
+  /** 「表示」押下時: 最新版をロード */
   const handleTemplateAction = async (template: TemplateRef) => {
     try {
       setIsFetching(template.id);
-      const isLocal = import.meta.env.VITE_TPL_SOURCE === 'local';
-
-      // 1) 全リビジョン（古い→新しい）を取得
-      const revisions = isLocal ? ['Revyyyy.mm.dd hh:mm'] : await listRevisions(template.id);
-      if (!revisions.length) throw new Error('リビジョンが見つかりません');
-
-      // 2) 最新リビジョンを取得（念のためAPIで最新を確定）
-      const latest = isLocal ? 'Revyyyy.mm.dd hh:mm' : await getLatestRevision(template.id);
-
-      // 3) 最新で本文取得
-      const content = await loadTemplateBody(template.id, { revision: latest });
+      const content = await loadTemplateBody(template.id);
 
       setViewTemplate({
         id: template.id,
         name: template.name,
         content,
-        revisions,
-        selectedRevision: latest,
-        latestRevision: latest
       });
-    } catch (e: any) {
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : '不明なエラーです';
       toast({
         title: 'テンプレート取得に失敗しました',
-        description: e?.message ?? '不明なエラーです',
+        description: message,
         variant: 'destructive'
       });
     } finally {
       setIsFetching(null);
-    }
-  };
-
-  /** リビジョン変更時: 本文を差し替え */
-  const handleChangeRevision = async (nextRev: string) => {
-    if (!viewTemplate) return;
-    try {
-      const content = await loadTemplateBody(viewTemplate.id, { revision: nextRev });
-      // latest は listRevisions の末尾でも良いが、念のため state の latestRevision を維持
-      setViewTemplate({
-        ...viewTemplate,
-        content,
-        selectedRevision: nextRev
-      });
-    } catch (e: any) {
-      toast({
-        title: 'テンプレート取得に失敗しました',
-        description: e?.message ?? '不明なエラーです',
-        variant: 'destructive'
-      });
     }
   };
 
@@ -202,125 +154,97 @@ export const DeliverableModal = ({ deliverable, onClose }: DeliverableModalProps
                 <CheckSquare className="w-4 h-4" />
                 主な活動
               </h3>
-              <ul className="list-disc pl-5 text-sm space-y-1">
-                {deliverable.activity.map((act) =>
-                (<li>
-                  <p className="text-muted-foreground leading-relaxed">
-                    {act}
-                  </p>
-                </li>)
-                )}
+              <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+                {deliverable.activity.map((item, idx) => (
+                  <li key={idx}>{item}</li>
+                ))}
               </ul>
             </div>
           )}
 
-          <Separator />
-
-          {/* テンプレート一覧 */}
+          {/* テンプレート表示部分 */}
           <div>
-            <h3 className="flex items-center gap-2 font-semibold text-foreground mb-4">
-              <FileText className="w-4 h-4" />
-              利用可能なテンプレート
-            </h3>
-            <div className="space-y-3">
-              {deliverable.templates.map((template) => {
-                const isBusy = isFetching === template.id;
-                return (
-                  <div
-                    key={template.id}
-                    className="flex items-center justify-between p-3 bg-muted/50 rounded-lg border"
-                  >
-                    <div className="flex items-center gap-3">
-                      <span className="text-lg">{getFormatIcon(template.format)}</span>
-                      <div>
-                        <div className="font-medium text-foreground">
-                          {template.name}
-                        </div>
-                        <div className="text-sm text-muted-foreground">
-                          {template.format}形式
-                        </div>
-                      </div>
-                    </div>
-                    <Button
-                      size="sm"
-                      onClick={() => handleTemplateAction(template)}
-                      className="flex items-center gap-2"
-                      disabled={isBusy}
-                    >
-                      {isBusy ? (
-                        <>
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                          読み込み中
-                        </>
-                      ) : (
-                        <>
-                          <Eye className="w-4 h-4" />
-                          表示
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                );
-              })}
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="flex items-center gap-2 font-semibold text-foreground">
+                <FileText className="w-4 h-4" />
+                利用テンプレート
+              </h3>
+
+              {viewTemplate && (
+                <div className="flex items-center gap-3">
+                  <Button variant="outline" size="sm" onClick={handleCopyTemplate}>
+                    <Copy className="mr-2 h-4 w-4" />
+                    テンプレートをコピー
+                  </Button>
+                </div>
+              )}
             </div>
+
+            {/* テンプレート一覧 */}
+            <div className="grid sm:grid-cols-2 gap-2">
+              {deliverable.templates.map(template => (
+                <div
+                  key={template.id}
+                  className="flex items-start gap-3 p-3 rounded-lg border bg-card"
+                >
+                  <div className="text-2xl" aria-hidden>
+                    {getFormatIcon(template.format)}
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h4 className="font-semibold">{template.name}</h4>
+                        <p className="text-sm text-muted-foreground">{template.id}</p>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleTemplateAction(template)}
+                        disabled={isFetching === template.id}
+                      >
+                        {isFetching === template.id ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            取得中...
+                          </>
+                        ) : (
+                          <>
+                            <Eye className="mr-2 h-4 w-4" />
+                            表示
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                    {template.updatedAt && (
+                      <p className="text-xs text-muted-foreground mt-1">最終更新: {template.updatedAt}</p>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* 本文表示 */}
+            {viewTemplate && (
+              <div className="mt-4 rounded-lg border bg-card p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="font-semibold">{viewTemplate.name}</h4>
+                </div>
+                <Separator className="mb-3" />
+                <ScrollArea className="h-64 pr-4">
+                  <article className="prose prose-sm max-w-none">
+                    <ReactMarkdown
+                      rehypePlugins={[rehypeSanitize({ ...sanitizeSchema, tagNames: sanitizeSchema.tagNames ?? [] }), rehypeRaw]}
+                      remarkPlugins={[remarkGfm]}
+                    >
+                      {viewTemplate.content}
+                    </ReactMarkdown>
+                  </article>
+                </ScrollArea>
+              </div>
+            )}
           </div>
         </div>
       </DialogContent>
-
-      {/* Template View Modal */}
-      {viewTemplate && (
-        <Dialog open={!!viewTemplate} onOpenChange={() => setViewTemplate(null)}>
-          <DialogContent className="max-w-3xl max-h-[80vh]">
-            <DialogHeader>
-              <DialogTitle className="flex items-center justify-between">
-                {/* 左: テンプレ名 */}
-                <span className="truncate">{viewTemplate.name}</span>
-
-                {/* 右: コピー */}
-                <Button size="sm" onClick={handleCopyTemplate} className="flex items-center gap-2 m-2">
-                  <Copy className="w-4 h-4" />
-                  コピー
-                </Button>
-              </DialogTitle>
-
-              <DialogDescription className="flex items-center gap-3 flex-wrap">
-                {/* リビジョン選択 */}
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-muted-foreground">リビジョン</span>
-                  <Select
-                    value={viewTemplate.selectedRevision}
-                    onValueChange={(v) => handleChangeRevision(v)}
-                  >
-                    <SelectTrigger className="w-[280px]">
-                      <SelectValue placeholder="リビジョンを選択" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {viewTemplate.revisions.map((rev) => (
-                        <SelectItem key={rev} value={rev}>
-                          {toRevisionLabel(rev, viewTemplate.latestRevision)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </DialogDescription>
-            </DialogHeader>
-
-            {/* 本文プレビュー */}
-            <ScrollArea className="h-[60vh] w-full rounded-md border p-4 prose prose-sm dark:prose-invert">
-              <ReactMarkdown
-                remarkPlugins={[remarkGfm]}
-                rehypePlugins={[
-                  [rehypeSanitize, sanitizeSchema],
-                  rehypeRaw,
-                ]}
-              >
-                {viewTemplate.content}
-              </ReactMarkdown>
-            </ScrollArea>
-          </DialogContent>
-        </Dialog>
-      )}
     </Dialog>
   );
 };

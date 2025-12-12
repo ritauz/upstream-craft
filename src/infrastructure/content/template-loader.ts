@@ -37,15 +37,13 @@ const loadLocal = async (templateId: string): Promise<string> => {
   return stripFrontMatter(mod.default);
 };
 
-type LoadOptions = { revision?: string };
-
-// 公開API: テンプレ本文を取得（revision 未指定なら最新）
-export const loadTemplateBody = async (templateId: string, opts: LoadOptions = {}): Promise<string> => {
+// 公開API: テンプレ本文を取得（現行バージョンのみ）
+export const loadTemplateBody = async (templateId: string): Promise<string> => {
   const source = import.meta.env.VITE_TPL_SOURCE;
   if (source === 'local') {
     return await loadLocal(templateId);
   }
-  const url = await resolveTemplateUrl(templateId, opts.revision);
+  const url = await resolveTemplateUrl(templateId);
   const res = await fetch(url, { cache: 'no-cache' });
   if (!res.ok) throw new Error(`template fetch failed: ${res.status}`);
   const text = await res.text();

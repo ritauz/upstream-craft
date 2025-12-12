@@ -14,7 +14,7 @@ import { assessDeliverableSelectionRisk } from '@/application/usecases/assess-de
 
 type Phase = '要件定義' | '基本設計';
 
-const Index = ({ isAdmin: boolean }) => {
+const Index = ({ isAdmin }: { isAdmin: boolean }) => {
   const [searchParams, setSearchParams] = useSearchParams();
 
   // --- URL<->State 変換ヘルパ ---
@@ -204,6 +204,14 @@ const Index = ({ isAdmin: boolean }) => {
               </div>
             </div>
             <div className="flex gap-2">
+              {isAdmin && (
+                <Button variant="outline" size="sm" asChild>
+                  <Link to="/admin/templates/version-editor">
+                    <FileSpreadsheet className="h-4 w-4 mr-2" />
+                    テンプレ編集
+                  </Link>
+                </Button>
+              )}
               <Button variant="outline" size="sm" onClick={() => setIsHowToUseModalOpen(true)}>
                 <HelpCircle className="h-4 w-4 mr-2" />
                 アプリの使い方

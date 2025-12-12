@@ -1,25 +1,17 @@
-// 目的: manifest.json を取得し、テンプレIDとリビジョンから公開URLを解決する。
+// 目的: manifest.json を取得し、テンプレIDから公開URLを解決する。
 
-export type RevisionEntry = {
-  revision: string; // 例: "Rev2025.10.16 14:32"
-  key: string;      // 例: "templates/req-spec/Rev2025.10.16_14-32/req-spec.md"
-  url?: string;     // Blob 公開URL（外部ドメイン）
-  updatedAt: string;
-};
-
-export type ManifestEntry = {
-  id: string;
-  latestRevision: string;   // 直近リビジョン
-  revisions: RevisionEntry[]; // 古い→新しい順
-};
-
-export type Manifest = {
-  generatedAt: string;
-  entries: ManifestEntry[];
-};
+import {
+  TemplateManifest,
+  TemplateEntry,
+  LegacyManifest,
+  convertLegacyManifest,
+  isLegacyManifest,
+  parseStandardMajor,
+  parseStandardVersion,
+} from '@/domain/templates/manifest';
 
 // 取得済みキャッシュ
-let _cached: Manifest | null = null;
+let _cached: TemplateManifest | null = null;
 
 // manifest の取得先 URL を決める
 // - VITE_TPL_MANIFEST_URL があればそれを使う
@@ -33,9 +25,7 @@ const manifestUrl = (): string => {
 const toProxyUrl = (absUrl: string): string => {
   try {
     const u = new URL(absUrl);
-    const envVal = import.meta.env.VITE_ENV;
-    // pathname だけを引き継いで /blob へ
-    console.log(`/blob/${envVal}/${u.pathname.replace(/^\/+/, '')}`);
+    const envVal = import.meta.env.VITE_ENV || 'prod';
     return `/blob/${envVal}/${u.pathname.replace(/^\/+/, '')}`;
   } catch {
     // 既に相対パスなどはそのまま
@@ -43,41 +33,50 @@ const toProxyUrl = (absUrl: string): string => {
   }
 };
 
+const parseManifest = (raw: unknown): TemplateManifest => {
+  if (isLegacyManifest(raw)) {
+    const major = parseStandardMajor(import.meta.env.VITE_TPL_STANDARD_MAJOR, 1);
+    const version = parseStandardVersion(import.meta.env.VITE_TPL_STANDARD_VERSION, '1.0');
+    return convertLegacyManifest(raw as LegacyManifest, major, version);
+  }
+  const parsed = raw as TemplateManifest;
+  return {
+    standardMajor: parsed.standardMajor ?? parseStandardMajor(import.meta.env.VITE_TPL_STANDARD_MAJOR, 1),
+    standardVersion: parsed.standardVersion ?? parseStandardVersion(import.meta.env.VITE_TPL_STANDARD_VERSION, '1.0'),
+    generatedAt: parsed.generatedAt,
+    templates: parsed.templates,
+  };
+};
+
 // manifest を取得（force=true で再取得）
-export const loadManifest = async (force = false): Promise<Manifest> => {
+export const loadManifest = async (force = false): Promise<TemplateManifest> => {
   if (_cached && !force) return _cached;
   const res = await fetch(manifestUrl(), { cache: 'no-cache' });
   if (!res.ok) throw new Error(`manifest fetch failed: ${res.status}`);
-  _cached = await res.json();
+  const raw = await res.json();
+  _cached = parseManifest(raw);
   return _cached!;
 };
 
-// 指定テンプレIDの「全リビジョン」（古い→新しい順）を返す
-export const listRevisions = async (id: string): Promise<string[]> => {
+// 指定テンプレIDの一覧を返す
+export const listTemplateIds = async (): Promise<string[]> => {
   const mf = await loadManifest();
-  const e = mf.entries.find(x => x.id === id);
-  if (!e) throw new Error(`template not found: ${id}`);
-  return e.revisions.map(r => r.revision);
+  return mf.templates.map(t => t.id);
 };
 
-// 指定テンプレIDの「最新リビジョン」を返す
-export const getLatestRevision = async (id: string): Promise<string> => {
+const findTemplate = async (id: string): Promise<TemplateEntry> => {
   const mf = await loadManifest();
-  const e = mf.entries.find(x => x.id === id);
-  if (!e) throw new Error(`template not found: ${id}`);
-  return e.latestRevision;
+  const entry = mf.templates.find(x => x.id === id);
+  if (!entry) throw new Error(`template not found: ${id}`);
+  return entry;
 };
 
-// 指定テンプレID + リビジョン（未指定なら最新）から「取得用URL」を返す
+// 指定テンプレIDから「取得用URL」を返す
 // 返すURLは /blob/... の同一オリジンに寄せてあるので CORS 不発。
-export const resolveTemplateUrl = async (id: string, revision?: string): Promise<string> => {
-  const mf = await loadManifest();
-  const e = mf.entries.find(x => x.id === id);
-  if (!e) throw new Error(`template not found: ${id}`);
-
-  const rev = revision || e.latestRevision;
-  const r = e.revisions.find(x => x.revision === rev);
-  if (!r?.url) throw new Error(`revision not found: ${id}@${rev}`);
-
-  return toProxyUrl(r.url);
+export const resolveTemplateUrl = async (id: string): Promise<string> => {
+  const entry = await findTemplate(id);
+  if (!entry.url) throw new Error(`template url missing: ${id}`);
+  return toProxyUrl(entry.url);
 };
+
+export type { TemplateManifest, TemplateEntry };
