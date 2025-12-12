@@ -14,7 +14,7 @@ import { assessDeliverableSelectionRisk } from '@/application/usecases/assess-de
 
 type Phase = '要件定義' | '基本設計';
 
-const Index = () => {
+const Index = ({ isAdmin: boolean }) => {
   const [searchParams, setSearchParams] = useSearchParams();
 
   // --- URL<->State 変換ヘルパ ---
